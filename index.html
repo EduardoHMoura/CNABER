@@ -1,407 +1,208 @@
-// cnab.js — parser client-side para arquivos de retorno bancário CNAB 400 e CNAB 240
-// Nenhum dado sai do navegador: tudo é processado localmente.
-
-const BANK_CODES = {
-  '001': 'Banco do Brasil', '033': 'Santander', '104': 'Caixa Econômica Federal',
-  '237': 'Bradesco', '341': 'Itaú', '399': 'HSBC', '422': 'Safra',
-  '748': 'Sicredi', '756': 'Sicoob', '077': 'Inter', '212': 'Banco Original',
-  '336': 'C6 Bank', '655': 'Banco Votorantim', '041': 'Banrisul'
-};
-
-function seg(line, start, end) {
-  // posições 1-indexadas, inclusive, conforme documentação Febraban
-  return line.slice(start - 1, end).trim();
-}
-
-function segRaw(line, start, end) {
-  return line.slice(start - 1, end);
-}
-
-function money(str, decimals = 2) {
-  const digits = str.replace(/\D/g, '') || '0';
-  const n = parseInt(digits, 10) / Math.pow(10, decimals);
-  return n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-}
-
-function dateBR(str) {
-  // DDMMAA ou DDMMAAAA
-  if (str.length === 6) {
-    const d = str.slice(0, 2), m = str.slice(2, 4), y = str.slice(4, 6);
-    if (d === '00' || m === '00') return '—';
-    return `${d}/${m}/20${y}`;
-  }
-  if (str.length === 8) {
-    const d = str.slice(0, 2), m = str.slice(2, 4), y = str.slice(4, 8);
-    if (d === '00' || m === '00') return '—';
-    return `${d}/${m}/${y}`;
-  }
-  return str;
-}
-
-// ---------- CNAB 400 (layout genérico Febraban de retorno de cobrança) ----------
-const CNAB400_HEADER = [
-  [1, 1, 'Tipo de registro', 'raw'],
-  [2, 2, 'Código do registro (retorno)', 'raw'],
-  [3, 9, 'Literal "RETORNO"', 'raw'],
-  [10, 11, 'Código de serviço', 'raw'],
-  [12, 26, 'Literal do serviço', 'raw'],
-  [27, 46, 'Código/CNPJ da empresa', 'raw'],
-  [47, 76, 'Nome da empresa (cedente)', 'raw'],
-  [77, 79, 'Código do banco', 'bank'],
-  [80, 94, 'Nome do banco', 'raw'],
-  [95, 100, 'Data de gravação', 'date'],
-  [101, 110, 'Nº sequencial de remessa', 'raw'],
-  [111, 116, 'Data do retorno (processamento)', 'date'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
-];
-
-const CNAB400_DETALHE = [
-  [1, 1, 'Tipo de registro', 'raw'],
-  [2, 3, 'Tipo de inscrição do cedente', 'raw'],
-  [4, 17, 'CNPJ/CPF do cedente', 'raw'],
-  [18, 19, 'Agência do cedente', 'raw'],
-  [20, 26, 'Conta do cedente', 'raw'],
-  [27, 37, 'Nosso número', 'raw'],
-  [38, 38, 'Dígito do nosso número', 'raw'],
-  [63, 65, 'Código de ocorrência', 'occurrence'],
-  [66, 73, 'Data de ocorrência', 'date'],
-  [74, 84, 'Nº do documento (seu número)', 'raw'],
-  [111, 120, 'Valor do título', 'money'],
-  [147, 150, 'Código do banco cobrador', 'bank'],
-  [176, 188, 'Valor do IOF', 'money'],
-  [189, 201, 'Valor do abatimento', 'money'],
-  [202, 214, 'Valor de desconto concedido', 'money'],
-  [215, 227, 'Valor pago pelo sacado', 'money'],
-  [228, 240, 'Valor de juros/mora', 'money'],
-  [241, 253, 'Valor de outros créditos', 'money'],
-  [254, 261, 'Data de crédito', 'date'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
-];
-
-const CNAB400_TRAILER = [
-  [1, 1, 'Tipo de registro', 'raw'],
-  [2, 4, 'Código do banco', 'bank'],
-  [18, 24, 'Quantidade de títulos cobrança simples', 'raw'],
-  [25, 39, 'Valor total dos títulos', 'money'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
-];
-
-const OCCURRENCE_CODES = {
-  '02': 'Confirmação de entrada de título',
-  '03': 'Título pago com dinheiro / rejeição de entrada',
-  '06': 'Liquidação normal',
-  '09': 'Baixa/liquidado (arquivo do cedente)',
-  '10': 'Baixado conforme instruções da agência',
-  '11': 'Título em ser (arquivo do cedente)',
-  '12': 'Abatimento concedido',
-  '13': 'Abatimento cancelado',
-  '14': 'Alteração de vencimento',
-  '15': 'Liquidação em cartório',
-  '17': 'Liquidação após baixa ou título não registrado',
-  '19': 'Confirmação de recebimento de instrução de protesto',
-  '20': 'Confirmação de recebimento de instrução de sustação de protesto',
-  '23': 'Remessa a cartório',
-  '24': 'Retirada de cartório e manutenção em carteira',
-  '25': 'Protestado e baixado',
-  '28': 'Débito de tarifas/custas',
-  '29': 'Ocorrências do sacado',
-  '30': 'Alteração de outros dados'
-};
-
-// ---------- CNAB 240 (layout genérico Febraban) ----------
-const CNAB240_HEADER_ARQUIVO = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [18, 32, 'CNPJ/CPF da empresa', 'raw'],
-  [73, 102, 'Nome da empresa', 'raw'],
-  [103, 132, 'Nome do banco', 'raw'],
-  [143, 143, 'Código remessa/retorno (1=remessa,2=retorno)', 'raw'],
-  [144, 151, 'Data de geração do arquivo', 'date'],
-  [152, 157, 'Hora de geração do arquivo', 'raw'],
-  [158, 163, 'Nº sequencial do arquivo', 'raw'],
-  [164, 166, 'Nº da versão do layout', 'raw']
-];
-
-const CNAB240_HEADER_LOTE = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 9, 'Tipo de operação', 'raw'],
-  [10, 11, 'Tipo de serviço', 'raw'],
-  [18, 32, 'CNPJ/CPF da empresa', 'raw'],
-  [73, 102, 'Nome da empresa (cedente)', 'raw'],
-  [143, 182, 'Endereço/logradouro', 'raw']
-];
-
-const CNAB240_SEGMENTO_T = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [18, 22, 'Agência cobradora', 'raw'],
-  [23, 29, 'Conta cobradora', 'raw'],
-  [38, 62, 'Nosso número', 'raw'],
-  [63, 63, 'Carteira', 'raw'],
-  [74, 88, 'Nº do documento (seu número)', 'raw'],
-  [89, 96, 'Data de vencimento', 'date'],
-  [97, 111, 'Valor do título', 'money'],
-  [123, 126, 'Código da carteira/banco cobrador', 'raw'],
-  [147, 154, 'Data de ocorrência', 'date'],
-  [215, 217, 'Código de ocorrência/motivo', 'raw']
-];
-
-const CNAB240_SEGMENTO_U = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [17, 29, 'Valor do IOF', 'money'],
-  [30, 42, 'Valor do abatimento', 'money'],
-  [43, 55, 'Valor do desconto', 'money'],
-  [56, 68, 'Valor do principal pago (título liquidado)', 'money'],
-  [69, 81, 'Valor de juros/mora', 'money'],
-  [82, 94, 'Valor de outros créditos', 'money'],
-  [95, 102, 'Data de ocorrência/crédito', 'date'],
-  [103, 110, 'Data de crédito', 'date']
-];
-
-const CNAB240_TRAILER_LOTE = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [18, 23, 'Quantidade de registros do lote', 'raw']
-];
-
-const CNAB240_TRAILER_ARQUIVO = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [18, 23, 'Quantidade de lotes do arquivo', 'raw'],
-  [24, 29, 'Quantidade de registros do arquivo', 'raw']
-];
-
-function classify(value, kind) {
-  switch (kind) {
-    case 'bank': return BANK_CODES[value] ? `${value} — ${BANK_CODES[value]}` : (value || '—');
-    case 'date': return dateBR(value);
-    case 'money': return value ? `R$ ${money(value)}` : '—';
-    case 'occurrence': return OCCURRENCE_CODES[value] ? `${value} — ${OCCURRENCE_CODES[value]}` : (value || '—');
-    default: return value || '—';
-  }
-}
-
-function extractFields(line, layout) {
-  return layout.map(([start, end, label, kind]) => ({
-    start, end, label,
-    raw: segRaw(line, start, end),
-    value: classify(seg(line, start, end), kind)
-  }));
-}
-
-function parseCNAB400(lines) {
-  const records = [];
-  lines.forEach((line, idx) => {
-    if (!line.trim()) return;
-    const tipo = line[0];
-    let layout, tipoLabel;
-    if (tipo === '0') { layout = CNAB400_HEADER; tipoLabel = 'Header do arquivo'; }
-    else if (tipo === '9' && idx === lines.length - 1) { layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo'; }
-    else if (tipo === '1') { layout = CNAB400_DETALHE; tipoLabel = 'Detalhe (movimento)'; }
-    else { layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo'; }
-    records.push({
-      lineNumber: idx + 1, tipoLabel, tipoRegistro: tipo,
-      length: line.length,
-      valid: line.length === 400,
-      fields: extractFields(line, layout)
-    });
-  });
-  return records;
-}
-
-function parseCNAB240(lines) {
-  const records = [];
-  lines.forEach((line, idx) => {
-    if (!line.trim()) return;
-    const tipoRegistro = line[7]; // posição 8
-    let layout, tipoLabel;
-    if (tipoRegistro === '0') { layout = CNAB240_HEADER_ARQUIVO; tipoLabel = 'Header do arquivo'; }
-    else if (tipoRegistro === '1') { layout = CNAB240_HEADER_LOTE; tipoLabel = 'Header de lote'; }
-    else if (tipoRegistro === '5') { layout = CNAB240_TRAILER_LOTE; tipoLabel = 'Trailer de lote'; }
-    else if (tipoRegistro === '9') { layout = CNAB240_TRAILER_ARQUIVO; tipoLabel = 'Trailer do arquivo'; }
-    else if (tipoRegistro === '3') {
-      const segmento = line[13]; // posição 14
-      if (segmento === 'U') { layout = CNAB240_SEGMENTO_U; tipoLabel = 'Detalhe — Segmento U (valores)'; }
-      else { layout = CNAB240_SEGMENTO_T; tipoLabel = `Detalhe — Segmento ${segmento || '?'}`; }
-    } else { layout = CNAB240_SEGMENTO_T; tipoLabel = 'Detalhe'; }
-    records.push({
-      lineNumber: idx + 1, tipoLabel, tipoRegistro,
-      length: line.length,
-      valid: line.length === 240,
-      fields: extractFields(line, layout)
-    });
-  });
-  return records;
-}
-
-function detectAndParse(rawText) {
-  const normalized = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalized.split('\n').filter(l => l.length > 0);
-  if (lines.length === 0) return { type: 'desconhecido', records: [] };
-
-  const lens = lines.map(l => l.length);
-  const mostCommon = lens.sort((a, b) =>
-    lens.filter(v => v === a).length - lens.filter(v => v === b).length
-  ).pop();
-
-  if (mostCommon === 240) return { type: 'CNAB 240', records: parseCNAB240(lines) };
-  if (mostCommon === 400) return { type: 'CNAB 400', records: parseCNAB400(lines) };
-  // fallback: tenta pelo tamanho mais próximo
-  if (mostCommon > 320) return { type: 'CNAB 400 (tamanho de linha divergente)', records: parseCNAB400(lines) };
-  return { type: 'CNAB 240 (tamanho de linha divergente)', records: parseCNAB240(lines) };
-}
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CNAB Retorno — leitor de arquivos de retorno bancário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1c2b24;
-    --paper: #f6f4ee;
-    --paper-2: #ffffff;
-    --line: #d8d3c4;
-    --accent: #2f6f52;
-    --accent-dark: #1e4a37;
-    --amber: #b5762a;
-    --red: #a3402f;
-    --mono: 'IBM Plex Mono', 'Courier New', monospace;
-    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --navy-900: #0b1f3a;
+    --navy-800: #12294d;
+    --navy-700: #1a3763;
+    --blue-600: #2f6fed;
+    --blue-500: #4a85f5;
+    --blue-100: #e6eefd;
+    --blue-50: #f2f6fe;
+    --bg: #eef2f8;
+    --surface: #ffffff;
+    --surface-soft: #f7f9fd;
+    --line: #dbe3f0;
+    --ink: #17233b;
+    --ink-soft: #55617a;
+    --ink-mute: #8590a8;
+    --teal: #1f9d7c;
+    --amber: #c17d24;
+    --red: #d0483f;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: var(--sans);
-    background: var(--paper);
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(47,111,237,0.08), transparent 45%),
+      radial-gradient(circle at 88% 0%, rgba(47,111,237,0.06), transparent 40%);
     color: var(--ink);
-    line-height: 1.5;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
   }
-  header {
-    border-bottom: 2px solid var(--ink);
-    padding: 2.5rem 2rem 2rem;
-    background: var(--paper);
-  }
-  .header-inner { max-width: 980px; margin: 0 auto; }
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent-dark);
-    margin: 0 0 0.75rem;
-  }
-  h1 {
-    font-size: 2.1rem;
-    margin: 0 0 0.5rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  header p { max-width: 640px; color: #4a5750; margin: 0.5rem 0 0; }
 
-  main { max-width: 980px; margin: 0 auto; padding: 2rem; }
+  header {
+    background: linear-gradient(135deg, var(--navy-900), var(--navy-700) 130%);
+    padding: 3rem 2rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 64px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 64px);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 980px; margin: 0 auto; position: relative; }
+  .brandmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #a9c2f5;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin: 0 0 1.1rem;
+  }
+  .brandmark .dot { width: 6px; height: 6px; border-radius: 50%; background: #5fd9b0; box-shadow: 0 0 0 3px rgba(95,217,176,0.2); }
+  h1 {
+    font-size: 2.15rem;
+    margin: 0 0 0.6rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #ffffff;
+  }
+  header p { max-width: 620px; color: #c3d1ec; margin: 0.5rem 0 0; font-size: 0.98rem; }
+
+  main { max-width: 980px; margin: -1.75rem auto 0; padding: 0 2rem 2rem; position: relative; }
 
   .dropzone {
-    border: 2px dashed var(--line);
-    border-radius: 4px;
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius-lg);
     padding: 3rem 2rem;
     text-align: center;
-    background: var(--paper-2);
+    background: var(--surface);
+    box-shadow: 0 14px 34px -18px rgba(19,45,86,0.28);
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
   }
   .dropzone:hover, .dropzone.drag {
-    border-color: var(--accent);
-    background: #f0f6f2;
+    border-color: var(--blue-500);
+    background: var(--blue-50);
+    transform: translateY(-1px);
   }
   .dropzone input { display: none; }
-  .dropzone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-  .dropzone .main-text { font-weight: 600; font-size: 1.05rem; }
-  .dropzone .sub-text { color: #6b7770; font-size: 0.9rem; margin-top: 0.35rem; }
+  .dropzone .icon-wrap {
+    width: 52px; height: 52px;
+    border-radius: var(--radius-sm);
+    background: var(--blue-100);
+    color: var(--blue-600);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.4rem;
+  }
+  .dropzone .main-text { font-weight: 600; font-size: 1.05rem; color: var(--ink); }
+  .dropzone .sub-text { color: var(--ink-mute); font-size: 0.88rem; margin-top: 0.4rem; }
 
   .privacy-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     font-size: 0.8rem;
-    color: #6b7770;
+    color: var(--ink-mute);
     text-align: center;
-    margin-top: 0.75rem;
+    margin-top: 1rem;
     font-family: var(--mono);
   }
 
-  #results { margin-top: 2rem; display: none; }
+  #results { margin-top: 1.75rem; display: none; }
 
   .summary-bar {
     display: flex;
-    gap: 1rem;
+    gap: 0.9rem;
     flex-wrap: wrap;
     margin-bottom: 1.5rem;
   }
   .stat {
-    background: var(--paper-2);
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 0.9rem 1.2rem;
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
     flex: 1;
-    min-width: 140px;
+    min-width: 150px;
+    box-shadow: 0 8px 20px -16px rgba(19,45,86,0.3);
   }
   .stat .label {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #6b7770;
+    color: var(--ink-mute);
   }
-  .stat .value { font-size: 1.35rem; font-weight: 700; margin-top: 0.2rem; }
-  .stat.ok .value { color: var(--accent-dark); }
+  .stat .value { font-size: 1.3rem; font-weight: 700; margin-top: 0.25rem; color: var(--navy-800); }
+  .stat.ok .value { color: var(--teal); }
   .stat.warn .value { color: var(--amber); }
   .stat.bad .value { color: var(--red); }
 
   .record {
-    background: var(--paper-2);
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 4px;
-    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 0.85rem;
     overflow: hidden;
+    box-shadow: 0 8px 20px -18px rgba(19,45,86,0.25);
+    transition: box-shadow 0.18s ease;
   }
+  .record.open { box-shadow: 0 14px 30px -18px rgba(19,45,86,0.35); }
   .record-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.85rem 1.2rem;
+    padding: 0.95rem 1.3rem;
     cursor: pointer;
-    background: #faf9f5;
+    background: var(--surface-soft);
     border-bottom: 1px solid transparent;
+    transition: background 0.15s ease;
   }
-  .record-head:hover { background: #f2f0e8; }
+  .record-head:hover { background: var(--blue-50); }
   .record.open .record-head { border-bottom-color: var(--line); }
-  .record-title { display: flex; align-items: baseline; gap: 0.6rem; }
+  .record-title { display: flex; align-items: center; gap: 0.7rem; }
   .record-title .badge {
     font-family: var(--mono);
     font-size: 11px;
-    background: var(--accent);
-    color: white;
-    padding: 2px 7px;
-    border-radius: 3px;
+    font-weight: 500;
+    background: var(--navy-800);
+    color: #cfe0ff;
+    padding: 3px 9px;
+    border-radius: var(--radius-sm);
+    min-width: 22px;
+    text-align: center;
   }
-  .record-title .name { font-weight: 600; }
-  .record-title .line-no { color: #8a9089; font-size: 0.85rem; font-family: var(--mono); }
-  .record-status { font-size: 0.8rem; font-family: var(--mono); }
-  .record-status.valid { color: var(--accent-dark); }
-  .record-status.invalid { color: var(--red); }
-  .chevron { transition: transform 0.15s ease; color: #8a9089; }
-  .record.open .chevron { transform: rotate(90deg); }
+  .record-title .name { font-weight: 600; color: var(--ink); }
+  .record-title .line-no { color: var(--ink-mute); font-size: 0.82rem; font-family: var(--mono); }
+  .record-status {
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .record-status.valid { color: var(--teal); background: rgba(31,157,124,0.1); }
+  .record-status.invalid { color: var(--red); background: rgba(208,72,63,0.1); }
+  .record-head-right { display: flex; align-items: center; gap: 0.7rem; }
+  .chevron { transition: transform 0.18s ease; color: var(--ink-mute); font-size: 1.1rem; }
+  .record.open .chevron { transform: rotate(90deg); color: var(--blue-600); }
 
   .fields-table {
     display: none;
@@ -413,29 +214,40 @@ function detectAndParse(rawText) {
   .fields-table th {
     text-align: left;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7770;
-    padding: 0.5rem 1.2rem;
+    color: var(--ink-mute);
+    padding: 0.6rem 1.3rem;
     border-bottom: 1px solid var(--line);
+    background: var(--surface-soft);
   }
   .fields-table td {
-    padding: 0.5rem 1.2rem;
-    border-bottom: 1px solid #eee9dc;
+    padding: 0.6rem 1.3rem;
+    border-bottom: 1px solid var(--line);
     vertical-align: top;
   }
   .fields-table tr:last-child td { border-bottom: none; }
-  .fields-table .pos { font-family: var(--mono); color: #8a9089; white-space: nowrap; }
-  .fields-table .label { font-weight: 500; }
-  .fields-table .value { font-family: var(--mono); }
-  .fields-table .raw { color: #9aa39c; font-size: 0.78rem; font-family: var(--mono); }
+  .fields-table tr:hover td { background: var(--blue-50); }
+  .fields-table .pos {
+    font-family: var(--mono);
+    color: var(--blue-600);
+    background: var(--blue-100);
+    white-space: nowrap;
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+  .fields-table .label { font-weight: 500; color: var(--ink); }
+  .fields-table .value { font-family: var(--mono); color: var(--navy-800); }
+  .fields-table .raw { color: var(--ink-mute); font-size: 0.78rem; font-family: var(--mono); }
 
   .error-box {
-    background: #fbeeea;
-    border: 1px solid #e2b8a8;
-    border-radius: 4px;
-    padding: 1rem 1.2rem;
+    background: #fdeeec;
+    border: 1px solid #f2c3bd;
+    border-radius: var(--radius-md);
+    padding: 1rem 1.3rem;
     color: var(--red);
     font-size: 0.9rem;
     margin-top: 1rem;
@@ -443,10 +255,10 @@ function detectAndParse(rawText) {
 
   footer {
     max-width: 980px;
-    margin: 3rem auto 2rem;
+    margin: 2.5rem auto 2rem;
     padding: 1.5rem 2rem 0;
     border-top: 1px solid var(--line);
-    color: #8a9089;
+    color: var(--ink-mute);
     font-size: 0.82rem;
   }
 </style>
@@ -455,7 +267,7 @@ function detectAndParse(rawText) {
 
 <header>
   <div class="header-inner">
-    <p class="eyebrow">Leitor de retorno bancário · CNAB 400 / CNAB 240</p>
+    <span class="brandmark"><span class="dot"></span>Leitor de retorno bancário &nbsp;·&nbsp; CNAB 400 / CNAB 240</span>
     <h1>Traduza seu arquivo .RET em campos legíveis</h1>
     <p>Envie um arquivo de retorno de cobrança (Bradesco, Sicredi, Itaú, Banco do Brasil e outros). O sistema detecta o layout automaticamente e mostra cada informação com a posição exata de onde foi extraída — tudo processado no seu navegador, sem envio a nenhum servidor.</p>
   </div>
@@ -464,11 +276,11 @@ function detectAndParse(rawText) {
 <main>
   <div class="dropzone" id="dropzone">
     <input type="file" id="fileInput" accept=".ret,.txt,.RET,.TXT">
-    <div class="icon">&#8613;</div>
+    <div class="icon-wrap">&#8613;</div>
     <div class="main-text">Arraste o arquivo .RET aqui ou clique para escolher</div>
     <div class="sub-text">Suporta CNAB 400 e CNAB 240 de qualquer banco</div>
   </div>
-  <div class="privacy-note">o arquivo nunca sai do seu computador — todo o processamento é local</div>
+  <div class="privacy-note">&#128274; o arquivo nunca sai do seu computador — todo o processamento é local</div>
 
   <div id="results">
     <div class="summary-bar" id="summaryBar"></div>
@@ -556,7 +368,7 @@ function render(parsed, filename) {
           <span class="name">${rec.tipoLabel}</span>
           <span class="line-no">linha ${rec.lineNumber}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="record-head-right">
           <span class="record-status ${statusClass}">${statusText}</span>
           <span class="chevron">&#8250;</span>
         </div>
@@ -593,68 +405,3 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
-
-# CNAB Retorno — leitor de arquivos de retorno bancário
-
-Ferramenta web (HTML/CSS/JS puro, sem backend) para abrir arquivos `.RET` de
-retorno de cobrança bancária (CNAB 400 e CNAB 240) e visualizar cada campo
-com sua posição exata no arquivo. Todo o processamento acontece no navegador
-— nenhum arquivo é enviado a um servidor.
-
-## Como usar localmente
-
-Basta abrir `index.html` em qualquer navegador. Não há build, nem
-dependências, nem instalação.
-
-## Como publicar no GitHub Pages
-
-1. Crie um repositório novo no GitHub (ex: `cnab-validator`) e suba estes
-   três arquivos (`index.html`, `cnab.js`, `README.md`) para a branch
-   `main`.
-2. No repositório, vá em **Settings → Pages**.
-3. Em "Source", selecione a branch `main` e a pasta `/ (root)`.
-4. Salve. Em alguns minutos o site estará disponível em:
-   `https://SEU-USUARIO.github.io/cnab-validator/`
-
-Alternativamente, via linha de comando:
-
-```bash
-git init
-git add index.html cnab.js README.md
-git commit -m "cnab retorno validator"
-git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/cnab-validator.git
-git push -u origin main
-```
-
-Depois é só ativar o Pages nas configurações do repositório.
-
-## O que o sistema faz
-
-- Detecta automaticamente se o arquivo é **CNAB 400** ou **CNAB 240**
-  (pelo tamanho predominante das linhas: 400 ou 240 colunas).
-- Identifica o tipo de cada registro (header de arquivo, header de lote,
-  detalhe/segmento, trailer de lote, trailer de arquivo).
-- Para CNAB 240, também reconhece os segmentos de detalhe (T, U, etc.),
-  como usado por bancos como Sicredi, Sicoob, Banco do Brasil e Itaú.
-- Mostra, para cada campo, a posição inicial/final, o rótulo do campo,
-  o valor já interpretado (datas formatadas, valores em R$, código do banco
-  traduzido para o nome, código de ocorrência traduzido) e o valor bruto
-  como está no arquivo.
-- Sinaliza linhas que não têm o tamanho esperado (400 ou 240 colunas),
-  o erro mais comum que causa falha silenciosa em sistemas como o IXC.
-
-## Limitação importante
-
-Os layouts usados aqui seguem o **padrão Febraban genérico**. A maioria dos
-bancos segue esse padrão à risca no CNAB 240 (é obrigatório por norma), mas
-alguns campos do CNAB 400 têm pequenas variações de posição entre bancos
-(principalmente nas faixas de "uso da empresa" e nos códigos de ocorrência
-proprietários). Se um campo aparecer com valor sem sentido, vale checar o
-manual de especificação técnica do banco emissor daquele arquivo específico.
-
-## Arquivos
-
-- `index.html` — interface (upload, tabela de resultados)
-- `cnab.js` — lógica de parsing e definição de layout dos campos
-- `README.md` — este arquivo
