@@ -196,36 +196,48 @@
     font-family: var(--mono);
   }
 
-  .mode-switch {
+  .kind-switch {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 0.6rem;
     margin-top: 1.25rem;
   }
-  .mode-switch .mode-label {
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    color: var(--ink-mute);
+  .kind-switch-inner {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px;
+    box-shadow: 0 8px 20px -16px rgba(19,45,86,0.3);
   }
-  .mode-switch .mode-label.active { color: var(--mode-accent-text); font-weight: 500; }
-  .mode-toggle-btn {
+  .kind-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: var(--surface);
-    border: 1px solid var(--mode-accent);
-    color: var(--ink);
-    font-family: var(--mono);
+    gap: 7px;
+    border: none;
+    background: transparent;
+    color: var(--ink-mute);
+    font-family: var(--sans);
+    font-weight: 500;
     font-size: 0.85rem;
     padding: 8px 16px;
     border-radius: 999px;
     cursor: pointer;
-    box-shadow: 0 6px 16px -12px rgba(19,45,86,0.3);
-    transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease;
+    transition: background 0.18s ease, color 0.18s ease;
   }
-  .mode-toggle-btn:hover { transform: translateY(-1px); background: var(--mode-accent-soft-2); }
-  .mode-toggle-btn .arrow { color: var(--mode-accent-strong); font-weight: 600; }
+  .kind-btn svg { width: 15px; height: 15px; opacity: 0.8; }
+  .kind-btn:hover:not(.active) { color: var(--ink); }
+  .kind-btn.active.is-remessa { background: var(--amber-accent-soft, #fdedd3); color: var(--amber-accent-text, #a85f05); }
+  .kind-btn.active.is-retorno { background: var(--blue-accent-soft, #e6eefd); color: var(--blue-accent-text, #1a53c9); }
+  .kind-btn.active.is-auto { background: var(--surface-soft); color: var(--ink); border: 1px solid var(--line); }
+  [data-theme="dark"] .kind-btn.active.is-remessa { background: #3a2a12; color: #f6bf74; }
+  [data-theme="dark"] .kind-btn.active.is-retorno { background: #1c2c4a; color: #a9c6fb; }
+  .mode-note {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    margin-top: 0.6rem;
+  }
   .mode-pill {
     display: inline-flex;
     align-items: center;
@@ -241,12 +253,6 @@
     margin-left: 8px;
   }
   .mode-pill .dot2 { width: 6px; height: 6px; border-radius: 50%; background: var(--mode-accent); }
-  .mode-note {
-    text-align: center;
-    font-size: 0.78rem;
-    color: var(--ink-mute);
-    margin-top: 0.5rem;
-  }
 
   #results { margin-top: 1.75rem; display: none; }
 
@@ -422,21 +428,31 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.7rem;
     overflow: hidden;
     box-shadow: 0 8px 20px -18px rgba(19,45,86,0.25);
+    transition: box-shadow 0.18s ease;
   }
+  .diff-record.open { box-shadow: 0 14px 30px -18px rgba(19,45,86,0.35); }
   .diff-record-head {
     padding: 0.85rem 1.3rem;
     background: var(--surface-soft);
-    border-bottom: 1px solid var(--line);
     font-weight: 600;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.6rem;
     font-size: 0.92rem;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
   }
-  .diff-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .diff-record.open .diff-record-head { border-bottom-color: var(--line); }
+  .diff-record-head:hover { background: var(--mode-accent-soft-2, var(--surface-soft)); }
+  .diff-record-head .head-left { display: flex; align-items: center; gap: 0.6rem; }
+  .diff-chevron { color: var(--ink-mute); transition: transform 0.18s ease, color 0.18s ease; font-size: 1.05rem; }
+  .diff-record.open .diff-chevron { transform: rotate(90deg); color: var(--mode-accent, var(--blue-600)); }
+  .diff-table { display: none; width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
+  .diff-record.open .diff-table { display: table; }
   .diff-table th {
     text-align: left;
     font-family: var(--mono);
@@ -447,17 +463,25 @@
     padding: 0.55rem 1.1rem;
     border-bottom: 1px solid var(--line);
     background: var(--surface-soft);
+    position: sticky;
+    top: 0;
   }
+  .diff-table th.val-a, .diff-table th.val-b { width: 34%; }
   .diff-table td {
-    padding: 0.55rem 1.1rem;
-    border-bottom: 1px solid var(--line);
+    padding: 0.5rem 1.1rem;
     font-family: var(--mono);
     color: var(--ink);
+    border-bottom: 1px solid var(--surface-soft);
   }
+  .diff-table tbody tr:nth-child(even) td { background: var(--surface-soft); }
   .diff-table tr:last-child td { border-bottom: none; }
-  .diff-table tr.diff td { background: rgba(208,72,63,0.08); }
+  .diff-table tr.diff td { background: rgba(208,72,63,0.1) !important; }
   .diff-table tr.diff td.val-a, .diff-table tr.diff td.val-b { color: var(--red); font-weight: 600; }
   .diff-table .field-label { color: var(--ink); font-family: var(--sans); font-weight: 500; }
+  .diff-table td.val-a { border-right: 2px solid var(--line); }
+  .diff-table th.val-a { border-right: 2px solid var(--line); }
+  .diff-table tr td:first-child { border-right: 1px dashed var(--line); }
+  .diff-table th:first-child { border-right: 1px dashed var(--line); }
   .diff-badge {
     font-family: var(--mono);
     font-size: 10.5px;
@@ -467,6 +491,79 @@
     color: var(--red);
   }
   .diff-badge.ok { background: rgba(31,157,124,0.12); color: var(--teal); }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.9rem;
+    box-shadow: 0 6px 16px -14px rgba(19,45,86,0.3);
+  }
+  .search-box svg { width: 15px; height: 15px; color: var(--ink-mute); flex-shrink: 0; }
+  .search-box input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--ink-mute); }
+  .search-clear {
+    display: none;
+    border: none;
+    background: var(--surface-soft);
+    color: var(--ink-mute);
+    border-radius: 50%;
+    width: 20px; height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+  }
+  .toggle-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.55rem 1rem;
+    font-size: 0.83rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .toggle-chip input { accent-color: var(--mode-accent, var(--blue-600)); }
+  .toggle-chip.active { border-color: var(--mode-accent, var(--blue-600)); color: var(--ink); }
+  .search-empty {
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 0.88rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+  }
+  mark.hit {
+    background: rgba(240,169,74,0.35);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
 
   footer {
     max-width: 980px;
@@ -478,8 +575,6 @@
   }
 </style>
 </head>
-<body>
-
 <body>
 
 <header>
@@ -508,14 +603,21 @@
       <div class="sub-text">Suporta CNAB 400 e CNAB 240 de qualquer banco</div>
     </div>
 
-    <div class="mode-switch">
-      <span class="mode-label" id="labelRemessa">Remessa</span>
-      <button class="mode-toggle-btn" id="modeToggle" type="button">
-        <span id="modeArrowText">Remessa &#8594;</span>
-        <span class="arrow">|</span>
-        <span>&#8592; Retorno</span>
-      </button>
-      <span class="mode-label active" id="labelRetorno">Retorno</span>
+    <div class="kind-switch">
+      <div class="kind-switch-inner">
+        <button class="kind-btn" id="kindAuto" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          Automático
+        </button>
+        <button class="kind-btn" id="kindRemessa" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          Remessa
+        </button>
+        <button class="kind-btn" id="kindRetorno" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
+          Retorno
+        </button>
+      </div>
     </div>
     <div class="mode-note" id="modeNote">Detecção automática ativa — o sistema identifica pelo header do arquivo</div>
 
@@ -523,7 +625,15 @@
 
     <div id="results">
       <div class="summary-bar" id="summaryBar"></div>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="fieldSearch" placeholder="Buscar campo (ex: valor, nosso número, data)…">
+          <button class="search-clear" id="fieldSearchClear" type="button">&times;</button>
+        </div>
+      </div>
       <div id="recordsList"></div>
+      <div class="search-empty" id="searchEmpty" style="display:none">Nenhum campo encontrado para essa busca.</div>
     </div>
 
     <div id="errorBox" style="display:none" class="error-box"></div>
@@ -548,7 +658,19 @@
     <div id="compareErrorBox" style="display:none" class="error-box"></div>
     <div id="compareResults" style="display:none">
       <div class="summary-bar" id="compareSummaryBar"></div>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="compareFieldSearch" placeholder="Buscar campo (ex: valor, nosso número, data)…">
+          <button class="search-clear" id="compareFieldSearchClear" type="button">&times;</button>
+        </div>
+        <label class="toggle-chip" id="diffOnlyChip">
+          <input type="checkbox" id="diffOnlyCheckbox">
+          Mostrar só registros com diferença
+        </label>
+      </div>
       <div id="compareRecordsList"></div>
+      <div class="search-empty" id="compareSearchEmpty" style="display:none">Nenhum campo encontrado para essa busca.</div>
     </div>
   </div>
 </main>
@@ -567,9 +689,9 @@ const results = document.getElementById('results');
 const summaryBar = document.getElementById('summaryBar');
 const recordsList = document.getElementById('recordsList');
 const errorBox = document.getElementById('errorBox');
-const modeToggle = document.getElementById('modeToggle');
-const labelRemessa = document.getElementById('labelRemessa');
-const labelRetorno = document.getElementById('labelRetorno');
+const kindAuto = document.getElementById('kindAuto');
+const kindRemessa = document.getElementById('kindRemessa');
+const kindRetorno = document.getElementById('kindRetorno');
 const modeNote = document.getElementById('modeNote');
 const themeToggle = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
@@ -600,10 +722,10 @@ fileInput.addEventListener('change', e => {
   if (e.target.files.length) handleFile(e.target.files[0]);
 });
 
-modeToggle.addEventListener('click', () => {
-  forcedKind = forcedKind === 'remessa' ? 'retorno' : 'remessa';
+function setForcedKind(kind) {
+  forcedKind = kind; // null | 'remessa' | 'retorno'
   updateModeLabels();
-  applyModeVisuals(forcedKind);
+  applyModeVisuals(kind || 'retorno');
   if (lastRawText !== null) {
     try {
       render(detectAndParse(lastRawText, forcedKind), lastFilename);
@@ -611,23 +733,27 @@ modeToggle.addEventListener('click', () => {
       showError('Não foi possível interpretar este arquivo: ' + err.message);
     }
   }
-});
+}
+kindAuto.addEventListener('click', () => setForcedKind(null));
+kindRemessa.addEventListener('click', () => setForcedKind('remessa'));
+kindRetorno.addEventListener('click', () => setForcedKind('retorno'));
 
 function updateModeLabels() {
+  kindAuto.classList.toggle('active', forcedKind === null);
+  kindAuto.classList.toggle('is-auto', true);
+  kindRemessa.classList.toggle('active', forcedKind === 'remessa');
+  kindRemessa.classList.toggle('is-remessa', true);
+  kindRetorno.classList.toggle('active', forcedKind === 'retorno');
+  kindRetorno.classList.toggle('is-retorno', true);
   if (forcedKind === 'remessa') {
-    labelRemessa.classList.add('active');
-    labelRetorno.classList.remove('active');
-    modeNote.textContent = 'Forçando leitura como REMESSA — clique novamente para alternar';
+    modeNote.textContent = 'Forçando leitura como REMESSA — os campos abaixo seguem esse layout';
   } else if (forcedKind === 'retorno') {
-    labelRetorno.classList.add('active');
-    labelRemessa.classList.remove('active');
-    modeNote.textContent = 'Forçando leitura como RETORNO — clique novamente para alternar';
+    modeNote.textContent = 'Forçando leitura como RETORNO — os campos abaixo seguem esse layout';
   } else {
-    labelRemessa.classList.remove('active');
-    labelRetorno.classList.add('active');
     modeNote.textContent = 'Detecção automática ativa — o sistema identifica pelo header do arquivo';
   }
 }
+updateModeLabels();
 
 themeToggle.addEventListener('click', () => {
   const isDark = document.body.getAttribute('data-theme') === 'dark';
@@ -742,6 +868,7 @@ function runComparison() {
   let lengthMismatch = a.records.length !== b.records.length;
 
   compareRecordsList.innerHTML = '';
+  let firstDiffOpened = false;
   for (let i = 0; i < maxLen; i++) {
     const recA = a.records[i];
     const recB = b.records[i];
@@ -749,9 +876,10 @@ function runComparison() {
     div.className = 'diff-record';
 
     if (!recA || !recB) {
+      div.dataset.hasdiff = '1';
       div.innerHTML = `
         <div class="diff-record-head">
-          <span>Linha ${i + 1}</span>
+          <span class="head-left"><span class="diff-chevron">&#8250;</span>Linha ${i + 1}</span>
           <span class="diff-badge">${!recA ? 'ausente em A' : 'ausente em B'}</span>
         </div>`;
       compareRecordsList.appendChild(div);
@@ -765,7 +893,7 @@ function runComparison() {
       if (isDiff) totalDiffFields++;
       return `
         <tr class="${isDiff ? 'diff' : ''}">
-          <td class="field-label">${fA.label}</td>
+          <td class="field-label">${escapeHtml(fA.label)}</td>
           <td class="val-a">${escapeHtml(fA.value)}</td>
           <td class="val-b">${escapeHtml(fB.value)}</td>
         </tr>`;
@@ -773,17 +901,25 @@ function runComparison() {
 
     const hasDiff = recA.fields.some((fA, idx) => fA.value !== (recB.fields[idx] || {}).value);
     if (hasDiff) recordsWithDiff++;
+    div.dataset.hasdiff = hasDiff ? '1' : '0';
 
     div.innerHTML = `
       <div class="diff-record-head">
-        <span>${recA.tipoLabel} — linha ${i + 1}</span>
+        <span class="head-left"><span class="diff-chevron">&#8250;</span>${recA.tipoLabel} — linha ${i + 1}</span>
         <span class="diff-badge ${hasDiff ? '' : 'ok'}">${hasDiff ? 'com diferenças' : 'idêntico'}</span>
       </div>
       <table class="diff-table">
-        <thead><tr><th>Campo</th><th>${escapeHtml(fileA.name)}</th><th>${escapeHtml(fileB.name)}</th></tr></thead>
+        <thead><tr><th>Campo</th><th class="val-a">${escapeHtml(fileA.name)}</th><th class="val-b">${escapeHtml(fileB.name)}</th></tr></thead>
         <tbody>${fieldRows}</tbody>
       </table>`;
+    div.querySelector('.diff-record-head').addEventListener('click', () => {
+      div.classList.toggle('open');
+    });
+    if (hasDiff && !firstDiffOpened) { div.classList.add('open'); firstDiffOpened = true; }
     compareRecordsList.appendChild(div);
+  }
+  if (!firstDiffOpened && compareRecordsList.firstElementChild) {
+    compareRecordsList.firstElementChild.classList.add('open');
   }
 
   compareSummaryBar.innerHTML = `
@@ -794,6 +930,8 @@ function runComparison() {
     <div class="stat ${lengthMismatch ? 'bad' : 'ok'}"><div class="label">Nº de registros bate?</div><div class="value" style="font-size:1rem">${lengthMismatch ? 'Não' : 'Sim'}</div></div>
   `;
   compareResults.style.display = 'block';
+  applyCompareSearch();
+  applyDiffOnlyFilter();
 }
 
 function extKindFromFilename(name) {
@@ -876,11 +1014,9 @@ function render(parsed, filename) {
     return;
   }
 
-  // se estamos em modo automático, refletimos o que foi detectado nos labels
+  // se estamos em modo automático, refletimos o que foi detectado
   if (forcedKind === null) {
-    labelRemessa.classList.toggle('active', kind === 'remessa');
-    labelRetorno.classList.toggle('active', kind !== 'remessa');
-    modeNote.textContent = `Detectado automaticamente como ${kind.toUpperCase()} — clique no botão para forçar outra leitura`;
+    modeNote.textContent = `Detectado automaticamente como ${kind.toUpperCase()} — clique em "Remessa" ou "Retorno" acima para forçar outra leitura`;
   }
   applyModeVisuals(kind);
 
@@ -935,6 +1071,7 @@ function render(parsed, filename) {
   });
 
   results.style.display = 'block';
+  applyFieldSearchSingle();
 }
 
 function escapeHtml(str) {
@@ -942,6 +1079,71 @@ function escapeHtml(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+
+// ---------- Busca por campo ----------
+const fieldSearch = document.getElementById('fieldSearch');
+const fieldSearchClear = document.getElementById('fieldSearchClear');
+const searchEmpty = document.getElementById('searchEmpty');
+const compareFieldSearch = document.getElementById('compareFieldSearch');
+const compareFieldSearchClear = document.getElementById('compareFieldSearchClear');
+const compareSearchEmpty = document.getElementById('compareSearchEmpty');
+const diffOnlyCheckbox = document.getElementById('diffOnlyCheckbox');
+const diffOnlyChip = document.getElementById('diffOnlyChip');
+
+function highlight(text, q) {
+  if (!q) return escapeHtml(text);
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return escapeHtml(text);
+  return escapeHtml(text.slice(0, idx)) + '<mark class="hit">' + escapeHtml(text.slice(idx, idx + q.length)) + '</mark>' + escapeHtml(text.slice(idx + q.length));
+}
+
+function filterFieldRows(container, query, emptyEl, recordSelector, labelSelector) {
+  const q = query.trim().toLowerCase();
+  fieldSearchClear && (fieldSearchClear.style.display = query ? 'block' : 'none');
+  let anyVisible = false;
+  container.querySelectorAll(recordSelector).forEach(recDiv => {
+    if (recDiv.dataset.hasdiff !== undefined && diffOnlyCheckbox && diffOnlyCheckbox.checked && recDiv.dataset.hasdiff === '0') {
+      recDiv.style.display = 'none';
+      return;
+    }
+    let anyRowMatch = false;
+    recDiv.querySelectorAll('tbody tr').forEach(tr => {
+      const labelCell = tr.querySelector(labelSelector);
+      const text = labelCell ? labelCell.textContent : '';
+      const match = !q || text.toLowerCase().includes(q);
+      tr.style.display = match ? '' : 'none';
+      if (match && labelCell) labelCell.innerHTML = highlight(text, q);
+      if (match) anyRowMatch = true;
+    });
+    if (q) {
+      recDiv.style.display = anyRowMatch ? '' : 'none';
+      if (anyRowMatch) { recDiv.classList.add('open'); anyVisible = true; }
+    } else {
+      recDiv.style.display = '';
+      if (anyRowMatch) anyVisible = true;
+    }
+  });
+  if (emptyEl) emptyEl.style.display = (q && !anyVisible) ? 'block' : 'none';
+}
+
+function applyFieldSearchSingle() {
+  filterFieldRows(recordsList, fieldSearch.value, searchEmpty, '.record', '.label');
+}
+function applyCompareSearch() {
+  filterFieldRows(compareRecordsList, compareFieldSearch.value, compareSearchEmpty, '.diff-record', '.field-label');
+}
+function applyDiffOnlyFilter() { applyCompareSearch(); }
+
+fieldSearch.addEventListener('input', applyFieldSearchSingle);
+fieldSearchClear.addEventListener('click', () => { fieldSearch.value = ''; applyFieldSearchSingle(); fieldSearch.focus(); });
+
+compareFieldSearch.addEventListener('input', applyCompareSearch);
+compareFieldSearchClear.addEventListener('click', () => { compareFieldSearch.value = ''; applyCompareSearch(); compareFieldSearch.focus(); });
+diffOnlyCheckbox.addEventListener('change', () => {
+  diffOnlyChip.classList.toggle('active', diffOnlyCheckbox.checked);
+  applyDiffOnlyFilter();
+});
+
 </script>
 </body>
 </html>
