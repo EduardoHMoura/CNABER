@@ -33,6 +33,25 @@
     --radius-sm: 9px;
   }
   * { box-sizing: border-box; }
+  [data-theme="dark"] {
+    --navy-900: #060f20;
+    --navy-800: #0b1830;
+    --navy-700: #142a4d;
+    --blue-600: #5b93f7;
+    --blue-500: #4a85f5;
+    --blue-100: #1c2c4a;
+    --blue-50: #16243d;
+    --bg: #0c1424;
+    --surface: #121d33;
+    --surface-soft: #16223c;
+    --line: #24344f;
+    --ink: #e6ecf7;
+    --ink-soft: #aab8d1;
+    --ink-mute: #7c8bab;
+    --teal: #3fd1a5;
+    --amber: #e0a94f;
+    --red: #ef7a6f;
+  }
   body {
     margin: 0;
     font-family: var(--sans);
@@ -43,7 +62,26 @@
     color: var(--ink);
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
   }
+
+  .theme-toggle {
+    position: absolute;
+    top: 1.75rem;
+    right: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: #cfe0ff;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.14); }
 
   header {
     background: linear-gradient(135deg, var(--navy-900), var(--navy-700) 130%);
@@ -126,6 +164,43 @@
     text-align: center;
     margin-top: 1rem;
     font-family: var(--mono);
+  }
+
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+  .mode-switch .mode-label {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--ink-mute);
+  }
+  .mode-switch .mode-label.active { color: var(--blue-600); font-weight: 500; }
+  .mode-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -12px rgba(19,45,86,0.3);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .mode-toggle-btn:hover { border-color: var(--blue-500); transform: translateY(-1px); }
+  .mode-toggle-btn .arrow { color: var(--blue-600); font-weight: 600; }
+  .mode-note {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    margin-top: 0.5rem;
   }
 
   #results { margin-top: 1.75rem; display: none; }
@@ -266,11 +341,17 @@
 </head>
 <body>
 
+<body>
+
 <header>
   <div class="header-inner">
+    <button class="theme-toggle" id="themeToggle" type="button">
+      <span id="themeIcon">&#9788;</span>
+      <span id="themeLabel">Modo claro</span>
+    </button>
     <span class="brandmark"><img src="favicon.svg" alt="" width="16" height="16" style="border-radius:4px;vertical-align:-3px;margin-right:2px"><span class="dot"></span>Leitor de retorno bancário &nbsp;·&nbsp; CNAB 400 / CNAB 240</span>
     <h1>Traduza seu arquivo .RET em campos legíveis</h1>
-    <p>Envie um arquivo de retorno de cobrança (Bradesco, Sicredi, Itaú, Banco do Brasil e outros). O sistema detecta o layout automaticamente e mostra cada informação com a posição exata de onde foi extraída — tudo processado no seu navegador, sem envio a nenhum servidor.</p>
+    <p>Envie um arquivo de remessa ou retorno de cobrança (Bradesco, Sicredi, Itaú, Banco do Brasil e outros). O sistema detecta o layout automaticamente e mostra cada informação com a posição exata de onde foi extraída — tudo processado no seu navegador, sem envio a nenhum servidor.</p>
   </div>
 </header>
 
@@ -281,6 +362,18 @@
     <div class="main-text">Arraste o arquivo .RET aqui ou clique para escolher</div>
     <div class="sub-text">Suporta CNAB 400 e CNAB 240 de qualquer banco</div>
   </div>
+
+  <div class="mode-switch">
+    <span class="mode-label" id="labelRemessa">Remessa</span>
+    <button class="mode-toggle-btn" id="modeToggle" type="button">
+      <span id="modeArrowText">Remessa &#8594;</span>
+      <span class="arrow">|</span>
+      <span>&#8592; Retorno</span>
+    </button>
+    <span class="mode-label active" id="labelRetorno">Retorno</span>
+  </div>
+  <div class="mode-note" id="modeNote">Detecção automática ativa — o sistema identifica pelo header do arquivo</div>
+
   <div class="privacy-note">&#128274; o arquivo nunca sai do seu computador — todo o processamento é local</div>
 
   <div id="results">
@@ -305,6 +398,17 @@ const results = document.getElementById('results');
 const summaryBar = document.getElementById('summaryBar');
 const recordsList = document.getElementById('recordsList');
 const errorBox = document.getElementById('errorBox');
+const modeToggle = document.getElementById('modeToggle');
+const labelRemessa = document.getElementById('labelRemessa');
+const labelRetorno = document.getElementById('labelRetorno');
+const modeNote = document.getElementById('modeNote');
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const themeLabel = document.getElementById('themeLabel');
+
+let lastRawText = null;
+let lastFilename = null;
+let forcedKind = null; // null = automático, 'remessa' ou 'retorno'
 
 dropzone.addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
@@ -318,12 +422,55 @@ fileInput.addEventListener('change', e => {
   if (e.target.files.length) handleFile(e.target.files[0]);
 });
 
+modeToggle.addEventListener('click', () => {
+  forcedKind = forcedKind === 'remessa' ? 'retorno' : 'remessa';
+  updateModeLabels();
+  if (lastRawText !== null) {
+    try {
+      render(detectAndParse(lastRawText, forcedKind), lastFilename);
+    } catch (err) {
+      showError('Não foi possível interpretar este arquivo: ' + err.message);
+    }
+  }
+});
+
+function updateModeLabels() {
+  if (forcedKind === 'remessa') {
+    labelRemessa.classList.add('active');
+    labelRetorno.classList.remove('active');
+    modeNote.textContent = 'Forçando leitura como REMESSA — clique novamente para alternar';
+  } else if (forcedKind === 'retorno') {
+    labelRetorno.classList.add('active');
+    labelRemessa.classList.remove('active');
+    modeNote.textContent = 'Forçando leitura como RETORNO — clique novamente para alternar';
+  } else {
+    labelRemessa.classList.remove('active');
+    labelRetorno.classList.add('active');
+    modeNote.textContent = 'Detecção automática ativa — o sistema identifica pelo header do arquivo';
+  }
+}
+
+themeToggle.addEventListener('click', () => {
+  const isDark = document.body.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.body.removeAttribute('data-theme');
+    themeIcon.innerHTML = '&#9788;';
+    themeLabel.textContent = 'Modo escuro';
+  } else {
+    document.body.setAttribute('data-theme', 'dark');
+    themeIcon.innerHTML = '&#9789;';
+    themeLabel.textContent = 'Modo claro';
+  }
+});
+
 function handleFile(file) {
   errorBox.style.display = 'none';
   const reader = new FileReader();
   reader.onload = e => {
+    lastRawText = e.target.result;
+    lastFilename = file.name;
     try {
-      render(detectAndParse(e.target.result), file.name);
+      render(detectAndParse(lastRawText, forcedKind), file.name);
     } catch (err) {
       showError('Não foi possível interpretar este arquivo: ' + err.message);
     }
@@ -339,10 +486,17 @@ function showError(msg) {
 }
 
 function render(parsed, filename) {
-  const { type, records } = parsed;
+  const { type, records, kind } = parsed;
   if (records.length === 0) {
     showError('Nenhuma linha reconhecível foi encontrada no arquivo.');
     return;
+  }
+
+  // se estamos em modo automático, refletimos o que foi detectado nos labels
+  if (forcedKind === null) {
+    labelRemessa.classList.toggle('active', kind === 'remessa');
+    labelRetorno.classList.toggle('active', kind !== 'remessa');
+    modeNote.textContent = `Detectado automaticamente como ${kind.toUpperCase()} — clique no botão para forçar outra leitura`;
   }
 
   const invalidCount = records.filter(r => !r.valid).length;
@@ -350,7 +504,7 @@ function render(parsed, filename) {
 
   summaryBar.innerHTML = `
     <div class="stat"><div class="label">Arquivo</div><div class="value" style="font-size:1rem">${filename}</div></div>
-    <div class="stat ok"><div class="label">Layout detectado</div><div class="value" style="font-size:1.1rem">${type}</div></div>
+    <div class="stat ok"><div class="label">Layout detectado</div><div class="value" style="font-size:1.1rem">${type} · ${kind}</div></div>
     <div class="stat"><div class="label">Registros</div><div class="value">${records.length}</div></div>
     <div class="stat ${invalidCount ? 'bad' : 'ok'}"><div class="label">Linhas fora do padrão (≠ ${expectedLen})</div><div class="value">${invalidCount}</div></div>
   `;
@@ -406,4 +560,3 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
-
