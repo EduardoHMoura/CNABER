@@ -37,6 +37,7 @@
     --mode-accent-soft: #e6eefd;
     --mode-accent-soft-2: #f2f6fe;
     --mode-accent-text: #1a53c9;
+    --mode-accent-oncolor: #ffffff;
   }
   [data-mode="remessa"] {
     --mode-accent: #d97706;
@@ -44,6 +45,7 @@
     --mode-accent-soft: #fdedd3;
     --mode-accent-soft-2: #fdf5e8;
     --mode-accent-text: #a85f05;
+    --mode-accent-oncolor: #ffffff;
   }
   [data-theme="dark"][data-mode="remessa"] {
     --mode-accent: #f0a94a;
@@ -51,6 +53,7 @@
     --mode-accent-soft: #3a2a12;
     --mode-accent-soft-2: #2c2010;
     --mode-accent-text: #f6bf74;
+    --mode-accent-oncolor: #1c1204;
   }
   * { box-sizing: border-box; }
   [data-theme="dark"] {
@@ -71,6 +74,12 @@
     --teal: #3fd1a5;
     --amber: #e0a94f;
     --red: #ef7a6f;
+    --mode-accent: #6ea3f8;
+    --mode-accent-strong: #8fb8fa;
+    --mode-accent-soft: #1c2c4a;
+    --mode-accent-soft-2: #16243d;
+    --mode-accent-text: #a9c6fb;
+    --mode-accent-oncolor: #0b1830;
   }
   body {
     margin: 0;
@@ -263,7 +272,7 @@
     letter-spacing: 0.08em;
     color: var(--ink-mute);
   }
-  .stat .value { font-size: 1.3rem; font-weight: 700; margin-top: 0.25rem; color: var(--navy-800); }
+  .stat .value { font-size: 1.3rem; font-weight: 700; margin-top: 0.25rem; color: var(--ink); }
   .stat.ok .value { color: var(--teal); }
   .stat.warn .value { color: var(--amber); }
   .stat.bad .value { color: var(--red); }
@@ -296,12 +305,12 @@
     font-size: 11px;
     font-weight: 500;
     background: var(--mode-accent-strong);
-    color: #ffffff;
+    color: var(--mode-accent-oncolor);
     padding: 3px 9px;
     border-radius: var(--radius-sm);
     min-width: 22px;
     text-align: center;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   .record-title .name { font-weight: 600; color: var(--ink); }
   .record-title .line-no { color: var(--ink-mute); font-size: 0.82rem; font-family: var(--mono); }
@@ -354,18 +363,110 @@
     transition: background 0.2s ease, color 0.2s ease;
   }
   .fields-table .label { font-weight: 500; color: var(--ink); }
-  .fields-table .value { font-family: var(--mono); color: var(--navy-800); }
+  .fields-table .value { font-family: var(--mono); color: var(--ink); }
   .fields-table .raw { color: var(--ink-mute); font-size: 0.78rem; font-family: var(--mono); }
 
   .error-box {
-    background: #fdeeec;
-    border: 1px solid #f2c3bd;
+    background: var(--error-bg, #fdeeec);
+    border: 1px solid var(--error-border, #f2c3bd);
     border-radius: var(--radius-md);
     padding: 1rem 1.3rem;
     color: var(--red);
     font-size: 0.9rem;
     margin-top: 1rem;
   }
+  [data-theme="dark"] {
+    --error-bg: #3a1a17;
+    --error-border: #5c2b26;
+  }
+
+  .tab-switch {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .tab-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-mute);
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 0.88rem;
+    padding: 8px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tab-btn.active {
+    background: var(--navy-800);
+    color: #ffffff;
+  }
+  .tab-btn:not(.active):hover { color: var(--ink); }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .compare-drop { padding: 2.25rem 1.5rem; }
+  .compare-drop.filled { border-color: var(--teal); background: var(--surface); }
+  .compare-drop .icon-wrap { font-weight: 700; }
+  @media (max-width: 720px) { .compare-grid { grid-template-columns: 1fr; } }
+
+  .diff-record {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 8px 20px -18px rgba(19,45,86,0.25);
+  }
+  .diff-record-head {
+    padding: 0.85rem 1.3rem;
+    background: var(--surface-soft);
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+  }
+  .diff-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .diff-table th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-mute);
+    padding: 0.55rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-soft);
+  }
+  .diff-table td {
+    padding: 0.55rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+    color: var(--ink);
+  }
+  .diff-table tr:last-child td { border-bottom: none; }
+  .diff-table tr.diff td { background: rgba(208,72,63,0.08); }
+  .diff-table tr.diff td.val-a, .diff-table tr.diff td.val-b { color: var(--red); font-weight: 600; }
+  .diff-table .field-label { color: var(--ink); font-family: var(--sans); font-weight: 500; }
+  .diff-badge {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(208,72,63,0.12);
+    color: var(--red);
+  }
+  .diff-badge.ok { background: rgba(31,157,124,0.12); color: var(--teal); }
 
   footer {
     max-width: 980px;
@@ -394,32 +495,62 @@
 </header>
 
 <main>
-  <div class="dropzone" id="dropzone">
-    <input type="file" id="fileInput" accept=".ret,.txt,.RET,.TXT">
-    <div class="icon-wrap">&#8613;</div>
-    <div class="main-text">Arraste o arquivo .RET aqui ou clique para escolher</div>
-    <div class="sub-text">Suporta CNAB 400 e CNAB 240 de qualquer banco</div>
+  <div class="tab-switch">
+    <button class="tab-btn active" id="tabSingle" type="button">Validar 1 arquivo</button>
+    <button class="tab-btn" id="tabCompare" type="button">Comparar 2 arquivos</button>
   </div>
 
-  <div class="mode-switch">
-    <span class="mode-label" id="labelRemessa">Remessa</span>
-    <button class="mode-toggle-btn" id="modeToggle" type="button">
-      <span id="modeArrowText">Remessa &#8594;</span>
-      <span class="arrow">|</span>
-      <span>&#8592; Retorno</span>
-    </button>
-    <span class="mode-label active" id="labelRetorno">Retorno</span>
+  <div id="singleView">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept=".ret,.txt,.RET,.TXT,.rem,.REM">
+      <div class="icon-wrap">&#8613;</div>
+      <div class="main-text">Arraste o arquivo .RET aqui ou clique para escolher</div>
+      <div class="sub-text">Suporta CNAB 400 e CNAB 240 de qualquer banco</div>
+    </div>
+
+    <div class="mode-switch">
+      <span class="mode-label" id="labelRemessa">Remessa</span>
+      <button class="mode-toggle-btn" id="modeToggle" type="button">
+        <span id="modeArrowText">Remessa &#8594;</span>
+        <span class="arrow">|</span>
+        <span>&#8592; Retorno</span>
+      </button>
+      <span class="mode-label active" id="labelRetorno">Retorno</span>
+    </div>
+    <div class="mode-note" id="modeNote">Detecção automática ativa — o sistema identifica pelo header do arquivo</div>
+
+    <div class="privacy-note">&#128274; o arquivo nunca sai do seu computador — todo o processamento é local</div>
+
+    <div id="results">
+      <div class="summary-bar" id="summaryBar"></div>
+      <div id="recordsList"></div>
+    </div>
+
+    <div id="errorBox" style="display:none" class="error-box"></div>
   </div>
-  <div class="mode-note" id="modeNote">Detecção automática ativa — o sistema identifica pelo header do arquivo</div>
 
-  <div class="privacy-note">&#128274; o arquivo nunca sai do seu computador — todo o processamento é local</div>
-
-  <div id="results">
-    <div class="summary-bar" id="summaryBar"></div>
-    <div id="recordsList"></div>
+  <div id="compareView" style="display:none">
+    <div class="compare-grid">
+      <div class="dropzone compare-drop" id="dropzoneA">
+        <input type="file" id="fileInputA" accept=".ret,.txt,.RET,.TXT,.rem,.REM">
+        <div class="icon-wrap">A</div>
+        <div class="main-text" id="labelFileA">Arquivo A</div>
+        <div class="sub-text">Arraste ou clique para escolher</div>
+      </div>
+      <div class="dropzone compare-drop" id="dropzoneB">
+        <input type="file" id="fileInputB" accept=".ret,.txt,.RET,.TXT,.rem,.REM">
+        <div class="icon-wrap">B</div>
+        <div class="main-text" id="labelFileB">Arquivo B</div>
+        <div class="sub-text">Arraste ou clique para escolher</div>
+      </div>
+    </div>
+    <div class="privacy-note">&#128274; nenhum arquivo sai do seu computador — comparação 100% local</div>
+    <div id="compareErrorBox" style="display:none" class="error-box"></div>
+    <div id="compareResults" style="display:none">
+      <div class="summary-bar" id="compareSummaryBar"></div>
+      <div id="compareRecordsList"></div>
+    </div>
   </div>
-
-  <div id="errorBox" style="display:none" class="error-box"></div>
 </main>
 
 <footer>
@@ -511,11 +642,205 @@ themeToggle.addEventListener('click', () => {
   }
 });
 
-function handleFile(file) {
+// ---------- Abas: validar 1 arquivo vs comparar 2 arquivos ----------
+const tabSingle = document.getElementById('tabSingle');
+const tabCompare = document.getElementById('tabCompare');
+const singleView = document.getElementById('singleView');
+const compareView = document.getElementById('compareView');
+
+tabSingle.addEventListener('click', () => {
+  tabSingle.classList.add('active');
+  tabCompare.classList.remove('active');
+  singleView.style.display = 'block';
+  compareView.style.display = 'none';
+});
+tabCompare.addEventListener('click', () => {
+  tabCompare.classList.add('active');
+  tabSingle.classList.remove('active');
+  compareView.style.display = 'block';
+  singleView.style.display = 'none';
+});
+
+// ---------- Comparação de dois arquivos ----------
+const dropzoneA = document.getElementById('dropzoneA');
+const dropzoneB = document.getElementById('dropzoneB');
+const fileInputA = document.getElementById('fileInputA');
+const fileInputB = document.getElementById('fileInputB');
+const labelFileA = document.getElementById('labelFileA');
+const labelFileB = document.getElementById('labelFileB');
+const compareErrorBox = document.getElementById('compareErrorBox');
+const compareResults = document.getElementById('compareResults');
+const compareSummaryBar = document.getElementById('compareSummaryBar');
+const compareRecordsList = document.getElementById('compareRecordsList');
+
+let fileA = null; // { name, parsed }
+let fileB = null;
+
+dropzoneA.addEventListener('click', () => fileInputA.click());
+dropzoneB.addEventListener('click', () => fileInputB.click());
+[[dropzoneA, fileInputA, 'A'], [dropzoneB, fileInputB, 'B']].forEach(([dz, input, slot]) => {
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag');
+    if (e.dataTransfer.files.length) handleCompareFile(e.dataTransfer.files[0], slot);
+  });
+  input.addEventListener('change', e => {
+    if (e.target.files.length) handleCompareFile(e.target.files[0], slot);
+  });
+});
+
+function handleCompareFile(file, slot) {
+  compareErrorBox.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rawText = e.target.result;
+    let parsed;
+    try {
+      parsed = detectAndParse(rawText, null);
+    } catch (err) {
+      compareErrorBox.style.display = 'block';
+      compareErrorBox.textContent = 'Não foi possível interpretar o arquivo ' + slot + ': ' + err.message;
+      return;
+    }
+    const entry = { name: file.name, parsed };
+    if (slot === 'A') {
+      fileA = entry;
+      dropzoneA.classList.add('filled');
+      labelFileA.textContent = file.name;
+    } else {
+      fileB = entry;
+      dropzoneB.classList.add('filled');
+      labelFileB.textContent = file.name;
+    }
+    if (fileA && fileB) runComparison();
+  };
+  reader.onerror = () => {
+    compareErrorBox.style.display = 'block';
+    compareErrorBox.textContent = 'Falha ao ler o arquivo ' + slot + '.';
+  };
+  reader.readAsText(file, 'ISO-8859-1');
+}
+
+function runComparison() {
+  compareErrorBox.style.display = 'none';
+  const a = fileA.parsed, b = fileB.parsed;
+
+  if (a.kind !== b.kind || a.type.split(' (')[0] !== b.type.split(' (')[0]) {
+    compareErrorBox.style.display = 'block';
+    compareErrorBox.textContent =
+      `Os arquivos não são compatíveis para comparação direta: "${fileA.name}" é ${a.type} · ${a.kind}, ` +
+      `enquanto "${fileB.name}" é ${b.type} · ${b.kind}. Envie dois arquivos do mesmo tipo e layout.`;
+    compareResults.style.display = 'none';
+    return;
+  }
+
+  const maxLen = Math.max(a.records.length, b.records.length);
+  let totalDiffFields = 0;
+  let recordsWithDiff = 0;
+  let lengthMismatch = a.records.length !== b.records.length;
+
+  compareRecordsList.innerHTML = '';
+  for (let i = 0; i < maxLen; i++) {
+    const recA = a.records[i];
+    const recB = b.records[i];
+    const div = document.createElement('div');
+    div.className = 'diff-record';
+
+    if (!recA || !recB) {
+      div.innerHTML = `
+        <div class="diff-record-head">
+          <span>Linha ${i + 1}</span>
+          <span class="diff-badge">${!recA ? 'ausente em A' : 'ausente em B'}</span>
+        </div>`;
+      compareRecordsList.appendChild(div);
+      recordsWithDiff++;
+      continue;
+    }
+
+    const fieldRows = recA.fields.map((fA, idx) => {
+      const fB = recB.fields[idx] || { value: '—' };
+      const isDiff = fA.value !== fB.value;
+      if (isDiff) totalDiffFields++;
+      return `
+        <tr class="${isDiff ? 'diff' : ''}">
+          <td class="field-label">${fA.label}</td>
+          <td class="val-a">${escapeHtml(fA.value)}</td>
+          <td class="val-b">${escapeHtml(fB.value)}</td>
+        </tr>`;
+    }).join('');
+
+    const hasDiff = recA.fields.some((fA, idx) => fA.value !== (recB.fields[idx] || {}).value);
+    if (hasDiff) recordsWithDiff++;
+
+    div.innerHTML = `
+      <div class="diff-record-head">
+        <span>${recA.tipoLabel} — linha ${i + 1}</span>
+        <span class="diff-badge ${hasDiff ? '' : 'ok'}">${hasDiff ? 'com diferenças' : 'idêntico'}</span>
+      </div>
+      <table class="diff-table">
+        <thead><tr><th>Campo</th><th>${escapeHtml(fileA.name)}</th><th>${escapeHtml(fileB.name)}</th></tr></thead>
+        <tbody>${fieldRows}</tbody>
+      </table>`;
+    compareRecordsList.appendChild(div);
+  }
+
+  compareSummaryBar.innerHTML = `
+    <div class="stat"><div class="label">Arquivo A</div><div class="value" style="font-size:0.95rem">${escapeHtml(fileA.name)}</div></div>
+    <div class="stat"><div class="label">Arquivo B</div><div class="value" style="font-size:0.95rem">${escapeHtml(fileB.name)}</div></div>
+    <div class="stat"><div class="label">Registros comparados</div><div class="value">${maxLen}</div></div>
+    <div class="stat ${totalDiffFields ? 'bad' : 'ok'}"><div class="label">Campos com diferença</div><div class="value">${totalDiffFields}</div></div>
+    <div class="stat ${lengthMismatch ? 'bad' : 'ok'}"><div class="label">Nº de registros bate?</div><div class="value" style="font-size:1rem">${lengthMismatch ? 'Não' : 'Sim'}</div></div>
+  `;
+  compareResults.style.display = 'block';
+}
+
+function extKindFromFilename(name) {
+  const n = name.toLowerCase();
+  if (/(^|[._-])rem(essa)?([._-]|$)/.test(n) || n.endsWith('.rem')) return 'remessa';
+  if (/(^|[._-])ret(orno)?([._-]|$)/.test(n) || n.endsWith('.ret')) return 'retorno';
+  return null;
+}
+
+function headerKindOf(rawText) {
+  const normalized = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n').filter(l => l.length > 0);
+  if (lines.length === 0) return null;
+  const lens = lines.map(l => l.length);
+  const mostCommon = lens.sort((a, b) =>
+    lens.filter(v => v === a).length - lens.filter(v => v === b).length
+  ).pop();
+  if (mostCommon === 240 || mostCommon > 320) {
+    return mostCommon === 240 ? detectFileKind240(lines[0]) : detectFileKind400(lines[0]);
+  }
+  return detectFileKind400(lines[0]);
+}
+
+function handleFile(file, bypassCheck) {
   errorBox.style.display = 'none';
   const reader = new FileReader();
   reader.onload = e => {
-    lastRawText = e.target.result;
+    const rawText = e.target.result;
+    const extKind = extKindFromFilename(file.name);
+    const contentKind = headerKindOf(rawText);
+    const effectiveKind = forcedKind || contentKind || 'retorno';
+
+    if (!bypassCheck && extKind && extKind !== effectiveKind) {
+      const extLabel = extKind.toUpperCase();
+      const modeLabel = effectiveKind.toUpperCase();
+      showError(
+        `Este arquivo parece ser de ${extLabel} (pelo nome "${file.name}"), mas o sistema está lendo como ${modeLabel}. ` +
+        `Para evitar interpretar os campos errado, o upload foi bloqueado. ` +
+        (forcedKind
+          ? `Clique no botão de alternância acima para mudar para ${extLabel} e envie o arquivo de novo.`
+          : `Verifique se este é mesmo um arquivo de ${extLabel}.`),
+        { allowOverride: true, file }
+      );
+      return;
+    }
+
+    lastRawText = rawText;
     lastFilename = file.name;
     try {
       render(detectAndParse(lastRawText, forcedKind), file.name);
@@ -527,10 +852,21 @@ function handleFile(file) {
   reader.readAsText(file, 'ISO-8859-1');
 }
 
-function showError(msg) {
+function showError(msg, opts) {
   results.style.display = 'none';
   errorBox.style.display = 'block';
-  errorBox.textContent = msg;
+  errorBox.innerHTML = '';
+  const p = document.createElement('div');
+  p.textContent = msg;
+  errorBox.appendChild(p);
+  if (opts && opts.allowOverride) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Enviar mesmo assim';
+    btn.className = 'mode-toggle-btn';
+    btn.style.marginTop = '0.85rem';
+    btn.addEventListener('click', () => handleFile(opts.file, true));
+    errorBox.appendChild(btn);
+  }
 }
 
 function render(parsed, filename) {
