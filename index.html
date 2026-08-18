@@ -31,6 +31,26 @@
     --radius-lg: 20px;
     --radius-md: 14px;
     --radius-sm: 9px;
+    /* cor de destaque dinâmica por modo — retorno (azul) por padrão */
+    --mode-accent: #2f6fed;
+    --mode-accent-strong: #1a53c9;
+    --mode-accent-soft: #e6eefd;
+    --mode-accent-soft-2: #f2f6fe;
+    --mode-accent-text: #1a53c9;
+  }
+  [data-mode="remessa"] {
+    --mode-accent: #d97706;
+    --mode-accent-strong: #b25f04;
+    --mode-accent-soft: #fdedd3;
+    --mode-accent-soft-2: #fdf5e8;
+    --mode-accent-text: #a85f05;
+  }
+  [data-theme="dark"][data-mode="remessa"] {
+    --mode-accent: #f0a94a;
+    --mode-accent-strong: #f6bf74;
+    --mode-accent-soft: #3a2a12;
+    --mode-accent-soft-2: #2c2010;
+    --mode-accent-text: #f6bf74;
   }
   * { box-sizing: border-box; }
   [data-theme="dark"] {
@@ -137,19 +157,20 @@
     transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
   }
   .dropzone:hover, .dropzone.drag {
-    border-color: var(--blue-500);
-    background: var(--blue-50);
+    border-color: var(--mode-accent);
+    background: var(--mode-accent-soft-2);
     transform: translateY(-1px);
   }
   .dropzone input { display: none; }
   .dropzone .icon-wrap {
     width: 52px; height: 52px;
     border-radius: var(--radius-sm);
-    background: var(--blue-100);
-    color: var(--blue-600);
+    background: var(--mode-accent-soft);
+    color: var(--mode-accent-strong);
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 1rem;
     font-size: 1.4rem;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   .dropzone .main-text { font-weight: 600; font-size: 1.05rem; color: var(--ink); }
   .dropzone .sub-text { color: var(--ink-mute); font-size: 0.88rem; margin-top: 0.4rem; }
@@ -178,13 +199,13 @@
     font-size: 0.82rem;
     color: var(--ink-mute);
   }
-  .mode-switch .mode-label.active { color: var(--blue-600); font-weight: 500; }
+  .mode-switch .mode-label.active { color: var(--mode-accent-text); font-weight: 500; }
   .mode-toggle-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: 1px solid var(--mode-accent);
     color: var(--ink);
     font-family: var(--mono);
     font-size: 0.85rem;
@@ -192,10 +213,25 @@
     border-radius: 999px;
     cursor: pointer;
     box-shadow: 0 6px 16px -12px rgba(19,45,86,0.3);
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease;
   }
-  .mode-toggle-btn:hover { border-color: var(--blue-500); transform: translateY(-1px); }
-  .mode-toggle-btn .arrow { color: var(--blue-600); font-weight: 600; }
+  .mode-toggle-btn:hover { transform: translateY(-1px); background: var(--mode-accent-soft-2); }
+  .mode-toggle-btn .arrow { color: var(--mode-accent-strong); font-weight: 600; }
+  .mode-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mode-accent-text);
+    background: var(--mode-accent-soft);
+    padding: 4px 11px;
+    border-radius: 999px;
+    margin-left: 8px;
+  }
+  .mode-pill .dot2 { width: 6px; height: 6px; border-radius: 50%; background: var(--mode-accent); }
   .mode-note {
     text-align: center;
     font-size: 0.78rem;
@@ -252,19 +288,20 @@
     border-bottom: 1px solid transparent;
     transition: background 0.15s ease;
   }
-  .record-head:hover { background: var(--blue-50); }
+  .record-head:hover { background: var(--mode-accent-soft-2); }
   .record.open .record-head { border-bottom-color: var(--line); }
   .record-title { display: flex; align-items: center; gap: 0.7rem; }
   .record-title .badge {
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 500;
-    background: var(--navy-800);
-    color: #cfe0ff;
+    background: var(--mode-accent-strong);
+    color: #ffffff;
     padding: 3px 9px;
     border-radius: var(--radius-sm);
     min-width: 22px;
     text-align: center;
+    transition: background 0.2s ease;
   }
   .record-title .name { font-weight: 600; color: var(--ink); }
   .record-title .line-no { color: var(--ink-mute); font-size: 0.82rem; font-family: var(--mono); }
@@ -277,8 +314,8 @@
   .record-status.valid { color: var(--teal); background: rgba(31,157,124,0.1); }
   .record-status.invalid { color: var(--red); background: rgba(208,72,63,0.1); }
   .record-head-right { display: flex; align-items: center; gap: 0.7rem; }
-  .chevron { transition: transform 0.18s ease; color: var(--ink-mute); font-size: 1.1rem; }
-  .record.open .chevron { transform: rotate(90deg); color: var(--blue-600); }
+  .chevron { transition: transform 0.18s ease, color 0.2s ease; color: var(--ink-mute); font-size: 1.1rem; }
+  .record.open .chevron { transform: rotate(90deg); color: var(--mode-accent); }
 
   .fields-table {
     display: none;
@@ -304,16 +341,17 @@
     vertical-align: top;
   }
   .fields-table tr:last-child td { border-bottom: none; }
-  .fields-table tr:hover td { background: var(--blue-50); }
+  .fields-table tr:hover td { background: var(--mode-accent-soft-2); }
   .fields-table .pos {
     font-family: var(--mono);
-    color: var(--blue-600);
-    background: var(--blue-100);
+    color: var(--mode-accent-text);
+    background: var(--mode-accent-soft);
     white-space: nowrap;
     font-size: 0.78rem;
     padding: 2px 8px;
     border-radius: 999px;
     display: inline-block;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   .fields-table .label { font-weight: 500; color: var(--ink); }
   .fields-table .value { font-family: var(--mono); color: var(--navy-800); }
@@ -350,7 +388,7 @@
       <span id="themeLabel">Modo claro</span>
     </button>
     <span class="brandmark"><img src="favicon.svg" alt="" width="16" height="16" style="border-radius:4px;vertical-align:-3px;margin-right:2px"><span class="dot"></span>Leitor de retorno bancário &nbsp;·&nbsp; CNAB 400 / CNAB 240</span>
-    <h1>Traduza seu arquivo .RET em campos legíveis</h1>
+    <h1>Traduza seu arquivo .RET em campos legíveis <span class="mode-pill" id="modePill"><span class="dot2"></span><span id="modePillText">retorno</span></span></h1>
     <p>Envie um arquivo de remessa ou retorno de cobrança (Bradesco, Sicredi, Itaú, Banco do Brasil e outros). O sistema detecta o layout automaticamente e mostra cada informação com a posição exata de onde foi extraída — tudo processado no seu navegador, sem envio a nenhum servidor.</p>
   </div>
 </header>
@@ -406,9 +444,18 @@ const themeToggle = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 const themeLabel = document.getElementById('themeLabel');
 
+const modePill = document.getElementById('modePill');
+const modePillText = document.getElementById('modePillText');
+
 let lastRawText = null;
 let lastFilename = null;
 let forcedKind = null; // null = automático, 'remessa' ou 'retorno'
+
+function applyModeVisuals(kind) {
+  document.body.setAttribute('data-mode', kind);
+  modePillText.textContent = kind;
+}
+applyModeVisuals('retorno');
 
 dropzone.addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
@@ -425,6 +472,7 @@ fileInput.addEventListener('change', e => {
 modeToggle.addEventListener('click', () => {
   forcedKind = forcedKind === 'remessa' ? 'retorno' : 'remessa';
   updateModeLabels();
+  applyModeVisuals(forcedKind);
   if (lastRawText !== null) {
     try {
       render(detectAndParse(lastRawText, forcedKind), lastFilename);
@@ -498,6 +546,7 @@ function render(parsed, filename) {
     labelRetorno.classList.toggle('active', kind !== 'remessa');
     modeNote.textContent = `Detectado automaticamente como ${kind.toUpperCase()} — clique no botão para forçar outra leitura`;
   }
+  applyModeVisuals(kind);
 
   const invalidCount = records.filter(r => !r.valid).length;
   const expectedLen = type.startsWith('CNAB 240') ? 240 : 400;
