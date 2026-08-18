@@ -108,6 +108,102 @@ const OCCURRENCE_CODES = {
   '30': 'Alteração de outros dados'
 };
 
+const REMESSA_INSTRUCTION_CODES = {
+  '01': 'Entrada de título',
+  '02': 'Pedido de baixa',
+  '04': 'Concessão de abatimento',
+  '05': 'Cancelamento de abatimento',
+  '06': 'Alteração de vencimento',
+  '07': 'Alteração de uso da empresa',
+  '08': 'Alteração de seu número',
+  '09': 'Protestar',
+  '18': 'Sustar protesto',
+  '31': 'Alteração de outros dados'
+};
+
+// ---------- CNAB 400 remessa (layout genérico Febraban de envio de cobrança) ----------
+const CNAB400_REMESSA_DETALHE = [
+  [1, 1, 'Tipo de registro', 'raw'],
+  [2, 3, 'Tipo de inscrição do cedente', 'raw'],
+  [4, 17, 'CNPJ/CPF do cedente', 'raw'],
+  [19, 20, 'Agência do cedente', 'raw'],
+  [21, 25, 'Conta corrente do cedente', 'raw'],
+  [27, 37, 'Nosso número', 'raw'],
+  [38, 38, 'Dígito do nosso número', 'raw'],
+  [63, 64, 'Código de instrução/ocorrência', 'remInstruction'],
+  [74, 84, 'Nº do documento (seu número)', 'raw'],
+  [111, 120, 'Data de vencimento', 'date'],
+  [121, 133, 'Valor do título', 'money'],
+  [147, 150, 'Código do banco cobrador', 'bank'],
+  [176, 188, 'Valor de desconto concedido', 'money'],
+  [189, 201, 'Valor de IOF', 'money'],
+  [202, 214, 'Valor de abatimento', 'money'],
+  [220, 220, 'Tipo de inscrição do sacado', 'raw'],
+  [221, 234, 'CNPJ/CPF do sacado', 'raw'],
+  [235, 274, 'Nome do sacado', 'raw'],
+  [275, 314, 'Endereço do sacado', 'raw'],
+  [315, 326, 'Bairro do sacado', 'raw'],
+  [327, 334, 'CEP do sacado', 'raw'],
+  [335, 349, 'Cidade do sacado', 'raw'],
+  [350, 351, 'UF do sacado', 'raw'],
+  [391, 394, 'Nº sequencial do registro', 'raw']
+];
+
+// ---------- CNAB 240 remessa — segmentos P, Q, R ----------
+const CNAB240_SEGMENTO_P = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [18, 22, 'Agência cedente', 'raw'],
+  [23, 29, 'Conta cedente', 'raw'],
+  [38, 62, 'Nosso número', 'raw'],
+  [63, 63, 'Código da carteira', 'raw'],
+  [74, 88, 'Nº do documento (seu número)', 'raw'],
+  [89, 96, 'Data de vencimento', 'date'],
+  [97, 111, 'Valor do título', 'money'],
+  [151, 158, 'Data de emissão do título', 'date'],
+  [159, 160, '1ª instrução', 'remInstruction'],
+  [174, 188, 'Valor de mora/dia', 'money'],
+  [189, 196, 'Data limite de desconto', 'date'],
+  [197, 211, 'Valor de desconto', 'money'],
+  [212, 226, 'Valor de IOF', 'money'],
+  [227, 241, 'Valor de abatimento', 'money']
+];
+
+const CNAB240_SEGMENTO_Q = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [18, 18, 'Tipo de inscrição do sacado', 'raw'],
+  [19, 33, 'CNPJ/CPF do sacado', 'raw'],
+  [34, 73, 'Nome do sacado', 'raw'],
+  [74, 113, 'Endereço do sacado', 'raw'],
+  [114, 128, 'Bairro do sacado', 'raw'],
+  [129, 133, 'CEP do sacado', 'raw'],
+  [136, 150, 'Cidade do sacado', 'raw'],
+  [151, 152, 'UF do sacado', 'raw']
+];
+
+const CNAB240_SEGMENTO_R = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [18, 18, 'Código do desconto 2', 'raw'],
+  [19, 26, 'Data do desconto 2', 'date'],
+  [27, 41, 'Valor do desconto 2', 'money'],
+  [42, 42, 'Código da multa', 'raw'],
+  [43, 50, 'Data da multa', 'date'],
+  [51, 65, 'Valor da multa', 'money'],
+  [76, 90, 'Valor do abatimento não aproveitado', 'money'],
+  [91, 220, 'Mensagem livre', 'raw']
+];
+
 // ---------- CNAB 240 (layout genérico Febraban) ----------
 const CNAB240_HEADER_ARQUIVO = [
   [1, 3, 'Código do banco', 'bank'],
@@ -189,6 +285,7 @@ function classify(value, kind) {
     case 'date': return dateBR(value);
     case 'money': return value ? `R$ ${money(value)}` : '—';
     case 'occurrence': return OCCURRENCE_CODES[value] ? `${value} — ${OCCURRENCE_CODES[value]}` : (value || '—');
+    case 'remInstruction': return REMESSA_INSTRUCTION_CODES[value] ? `${value} — ${REMESSA_INSTRUCTION_CODES[value]}` : (value || '—');
     default: return value || '—';
   }
 }
@@ -201,16 +298,30 @@ function extractFields(line, layout) {
   }));
 }
 
-function parseCNAB400(lines) {
+function detectFileKind400(headerLine) {
+  // posição 2 do header: '1' = remessa, '2' = retorno (padrão Febraban)
+  const marker = headerLine[1];
+  if (marker === '1') return 'remessa';
+  if (marker === '2') return 'retorno';
+  return 'retorno';
+}
+
+function parseCNAB400(lines, forcedKind) {
   const records = [];
+  const kind = forcedKind || (lines.length ? detectFileKind400(lines[0]) : 'retorno');
   lines.forEach((line, idx) => {
     if (!line.trim()) return;
     const tipo = line[0];
     let layout, tipoLabel;
-    if (tipo === '0') { layout = CNAB400_HEADER; tipoLabel = 'Header do arquivo'; }
-    else if (tipo === '9' && idx === lines.length - 1) { layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo'; }
-    else if (tipo === '1') { layout = CNAB400_DETALHE; tipoLabel = 'Detalhe (movimento)'; }
-    else { layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo'; }
+    if (tipo === '0') {
+      layout = CNAB400_HEADER;
+      tipoLabel = kind === 'remessa' ? 'Header do arquivo (remessa)' : 'Header do arquivo (retorno)';
+    } else if (tipo === '9' && idx === lines.length - 1) {
+      layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo';
+    } else if (tipo === '1') {
+      if (kind === 'remessa') { layout = CNAB400_REMESSA_DETALHE; tipoLabel = 'Detalhe (instrução de cobrança)'; }
+      else { layout = CNAB400_DETALHE; tipoLabel = 'Detalhe (movimento)'; }
+    } else { layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo'; }
     records.push({
       lineNumber: idx + 1, tipoLabel, tipoRegistro: tipo,
       length: line.length,
@@ -218,23 +329,39 @@ function parseCNAB400(lines) {
       fields: extractFields(line, layout)
     });
   });
-  return records;
+  return { records, kind };
 }
 
-function parseCNAB240(lines) {
+function detectFileKind240(headerLine) {
+  // posição 143 do header de arquivo: '1' = remessa, '2' = retorno
+  const marker = headerLine.length >= 143 ? headerLine[142] : null;
+  if (marker === '1') return 'remessa';
+  if (marker === '2') return 'retorno';
+  return 'retorno';
+}
+
+function parseCNAB240(lines, forcedKind) {
   const records = [];
+  const kind = forcedKind || (lines.length ? detectFileKind240(lines[0]) : 'retorno');
   lines.forEach((line, idx) => {
     if (!line.trim()) return;
     const tipoRegistro = line[7]; // posição 8
     let layout, tipoLabel;
-    if (tipoRegistro === '0') { layout = CNAB240_HEADER_ARQUIVO; tipoLabel = 'Header do arquivo'; }
+    if (tipoRegistro === '0') { layout = CNAB240_HEADER_ARQUIVO; tipoLabel = `Header do arquivo (${kind})`; }
     else if (tipoRegistro === '1') { layout = CNAB240_HEADER_LOTE; tipoLabel = 'Header de lote'; }
     else if (tipoRegistro === '5') { layout = CNAB240_TRAILER_LOTE; tipoLabel = 'Trailer de lote'; }
     else if (tipoRegistro === '9') { layout = CNAB240_TRAILER_ARQUIVO; tipoLabel = 'Trailer do arquivo'; }
     else if (tipoRegistro === '3') {
       const segmento = line[13]; // posição 14
-      if (segmento === 'U') { layout = CNAB240_SEGMENTO_U; tipoLabel = 'Detalhe — Segmento U (valores)'; }
-      else { layout = CNAB240_SEGMENTO_T; tipoLabel = `Detalhe — Segmento ${segmento || '?'}`; }
+      if (kind === 'remessa') {
+        if (segmento === 'P') { layout = CNAB240_SEGMENTO_P; tipoLabel = 'Detalhe — Segmento P (título)'; }
+        else if (segmento === 'Q') { layout = CNAB240_SEGMENTO_Q; tipoLabel = 'Detalhe — Segmento Q (sacado)'; }
+        else if (segmento === 'R') { layout = CNAB240_SEGMENTO_R; tipoLabel = 'Detalhe — Segmento R (descontos/multa)'; }
+        else { layout = CNAB240_SEGMENTO_P; tipoLabel = `Detalhe — Segmento ${segmento || '?'}`; }
+      } else {
+        if (segmento === 'U') { layout = CNAB240_SEGMENTO_U; tipoLabel = 'Detalhe — Segmento U (valores)'; }
+        else { layout = CNAB240_SEGMENTO_T; tipoLabel = `Detalhe — Segmento ${segmento || '?'}`; }
+      }
     } else { layout = CNAB240_SEGMENTO_T; tipoLabel = 'Detalhe'; }
     records.push({
       lineNumber: idx + 1, tipoLabel, tipoRegistro,
@@ -243,22 +370,24 @@ function parseCNAB240(lines) {
       fields: extractFields(line, layout)
     });
   });
-  return records;
+  return { records, kind };
 }
 
-function detectAndParse(rawText) {
+function detectAndParse(rawText, forcedKind) {
   const normalized = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalized.split('\n').filter(l => l.length > 0);
-  if (lines.length === 0) return { type: 'desconhecido', records: [] };
+  if (lines.length === 0) return { type: 'desconhecido', records: [], kind: 'retorno' };
 
   const lens = lines.map(l => l.length);
   const mostCommon = lens.sort((a, b) =>
     lens.filter(v => v === a).length - lens.filter(v => v === b).length
   ).pop();
 
-  if (mostCommon === 240) return { type: 'CNAB 240', records: parseCNAB240(lines) };
-  if (mostCommon === 400) return { type: 'CNAB 400', records: parseCNAB400(lines) };
-  // fallback: tenta pelo tamanho mais próximo
-  if (mostCommon > 320) return { type: 'CNAB 400 (tamanho de linha divergente)', records: parseCNAB400(lines) };
-  return { type: 'CNAB 240 (tamanho de linha divergente)', records: parseCNAB240(lines) };
+  let type, parsed;
+  if (mostCommon === 240) { type = 'CNAB 240'; parsed = parseCNAB240(lines, forcedKind); }
+  else if (mostCommon === 400) { type = 'CNAB 400'; parsed = parseCNAB400(lines, forcedKind); }
+  else if (mostCommon > 320) { type = 'CNAB 400 (tamanho de linha divergente)'; parsed = parseCNAB400(lines, forcedKind); }
+  else { type = 'CNAB 240 (tamanho de linha divergente)'; parsed = parseCNAB240(lines, forcedKind); }
+
+  return { type, records: parsed.records, kind: parsed.kind };
 }
