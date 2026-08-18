@@ -38,115 +38,169 @@ function dateBR(str) {
   return str;
 }
 
-// ---------- CNAB 400 (layout genérico Febraban de retorno de cobrança) ----------
+// ---------- CNAB 400 (layout oficial Bradesco/Febraban — arquivo de RETORNO) ----------
 const CNAB400_HEADER = [
   [1, 1, 'Tipo de registro', 'raw'],
   [2, 2, 'Código do registro (retorno)', 'raw'],
   [3, 9, 'Literal "RETORNO"', 'raw'],
   [10, 11, 'Código de serviço', 'raw'],
   [12, 26, 'Literal do serviço', 'raw'],
-  [27, 46, 'Código/CNPJ da empresa', 'raw'],
+  [27, 46, 'Código da empresa', 'raw'],
   [47, 76, 'Nome da empresa (cedente)', 'raw'],
   [77, 79, 'Código do banco', 'bank'],
   [80, 94, 'Nome do banco', 'raw'],
   [95, 100, 'Data de gravação', 'date'],
-  [101, 110, 'Nº sequencial de remessa', 'raw'],
-  [111, 116, 'Data do retorno (processamento)', 'date'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
+  [109, 113, 'Nº do aviso bancário', 'raw'],
+  [380, 385, 'Data do crédito', 'date'],
+  [395, 400, 'Nº sequencial do registro', 'raw']
 ];
 
 const CNAB400_DETALHE = [
   [1, 1, 'Tipo de registro', 'raw'],
   [2, 3, 'Tipo de inscrição do cedente', 'raw'],
   [4, 17, 'CNPJ/CPF do cedente', 'raw'],
-  [18, 19, 'Agência do cedente', 'raw'],
-  [20, 26, 'Conta do cedente', 'raw'],
-  [27, 37, 'Nosso número', 'raw'],
-  [38, 38, 'Dígito do nosso número', 'raw'],
-  [63, 65, 'Código de ocorrência', 'occurrence'],
-  [66, 73, 'Data de ocorrência', 'date'],
-  [74, 84, 'Nº do documento (seu número)', 'raw'],
-  [111, 120, 'Valor do título', 'money'],
-  [147, 150, 'Código do banco cobrador', 'bank'],
-  [176, 188, 'Valor do IOF', 'money'],
-  [189, 201, 'Valor do abatimento', 'money'],
-  [202, 214, 'Valor de desconto concedido', 'money'],
-  [215, 227, 'Valor pago pelo sacado', 'money'],
-  [228, 240, 'Valor de juros/mora', 'money'],
-  [241, 253, 'Valor de outros créditos', 'money'],
-  [254, 261, 'Data de crédito', 'date'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
+  [21, 21, 'Zero (fixo)', 'raw'],
+  [22, 24, 'Código da carteira', 'raw'],
+  [25, 29, 'Agência do cedente (sem dígito)', 'raw'],
+  [30, 36, 'Conta corrente do cedente', 'raw'],
+  [37, 37, 'Dígito da conta', 'raw'],
+  [38, 62, 'Nº de controle do participante (uso da empresa)', 'raw'],
+  [71, 81, 'Nosso número', 'raw'],
+  [82, 82, 'Dígito de autoconferência do nosso número', 'raw'],
+  [108, 108, 'Carteira', 'raw'],
+  [109, 110, 'Código de ocorrência', 'occurrence'],
+  [111, 116, 'Data de ocorrência no banco', 'date'],
+  [117, 126, 'Nº do documento (seu número)', 'raw'],
+  [147, 152, 'Data de vencimento do título', 'date'],
+  [153, 165, 'Valor do título', 'money'],
+  [166, 168, 'Banco cobrador', 'bank'],
+  [169, 173, 'Agência cobradora', 'raw'],
+  [176, 188, 'Despesas de cobrança (tarifa)', 'money'],
+  [189, 201, 'Outras despesas (custas de protesto)', 'money'],
+  [202, 214, 'Juros da operação em atraso', 'money'],
+  [215, 227, 'IOF devido', 'money'],
+  [228, 240, 'Abatimento concedido sobre o título', 'money'],
+  [241, 253, 'Desconto concedido', 'money'],
+  [254, 266, 'Valor pago', 'money'],
+  [267, 279, 'Juros de mora', 'money'],
+  [280, 292, 'Outros créditos', 'money'],
+  [296, 301, 'Data do crédito', 'date'],
+  [319, 328, 'Motivos da ocorrência', 'raw'],
+  [395, 400, 'Nº sequencial do registro', 'raw']
 ];
 
 const CNAB400_TRAILER = [
   [1, 1, 'Tipo de registro', 'raw'],
-  [2, 4, 'Código do banco', 'bank'],
-  [18, 24, 'Quantidade de títulos cobrança simples', 'raw'],
-  [25, 39, 'Valor total dos títulos', 'money'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
+  [2, 2, 'Identificação do retorno', 'raw'],
+  [5, 7, 'Código do banco', 'bank'],
+  [18, 25, 'Quantidade de títulos em cobrança', 'raw'],
+  [26, 39, 'Valor total em cobrança', 'money'],
+  [58, 62, 'Qtde. registros ocorrência 02 (entrada confirmada)', 'raw'],
+  [63, 74, 'Valor registros ocorrência 02', 'money'],
+  [75, 86, 'Valor registros ocorrência 06 (liquidação)', 'money'],
+  [87, 91, 'Qtde. registros ocorrência 06', 'raw'],
+  [104, 108, 'Qtde. registros ocorrência 09/10 (baixados)', 'raw'],
+  [109, 120, 'Valor registros ocorrência 09/10', 'money'],
+  [395, 400, 'Nº sequencial do registro', 'raw']
 ];
 
 const OCCURRENCE_CODES = {
-  '02': 'Confirmação de entrada de título',
-  '03': 'Título pago com dinheiro / rejeição de entrada',
+  '02': 'Entrada confirmada',
+  '03': 'Entrada rejeitada',
   '06': 'Liquidação normal',
-  '09': 'Baixa/liquidado (arquivo do cedente)',
+  '07': 'Confirmação de exclusão de cadastro do pagador (débito)',
+  '08': 'Rejeição do pedido de exclusão de cadastro do pagador (débito)',
+  '09': 'Baixado automaticamente via arquivo',
   '10': 'Baixado conforme instruções da agência',
-  '11': 'Título em ser (arquivo do cedente)',
+  '11': 'Em ser — arquivo de títulos pendentes',
   '12': 'Abatimento concedido',
   '13': 'Abatimento cancelado',
-  '14': 'Alteração de vencimento',
+  '14': 'Vencimento alterado',
   '15': 'Liquidação em cartório',
+  '16': 'Título pago em cheque — vinculado',
   '17': 'Liquidação após baixa ou título não registrado',
+  '18': 'Acerto de depositária',
   '19': 'Confirmação de recebimento de instrução de protesto',
   '20': 'Confirmação de recebimento de instrução de sustação de protesto',
-  '23': 'Remessa a cartório',
-  '24': 'Retirada de cartório e manutenção em carteira',
-  '25': 'Protestado e baixado',
+  '21': 'Acerto do controle do participante',
+  '22': 'Título com pagamento cancelado',
+  '23': 'Entrada do título em cartório',
+  '24': 'Entrada rejeitada por CEP irregular',
+  '25': 'Confirmação de recebimento de instrução de protesto falimentar',
+  '27': 'Baixa rejeitada',
   '28': 'Débito de tarifas/custas',
-  '29': 'Ocorrências do sacado',
-  '30': 'Alteração de outros dados'
+  '29': 'Ocorrências do pagador',
+  '30': 'Alteração de outros dados rejeitados',
+  '31': 'Confirmado inclusão de cadastro do pagador',
+  '32': 'Instrução rejeitada',
+  '33': 'Confirmação de pedido de alteração de outros dados',
+  '34': 'Retirado de cartório e mantido em carteira',
+  '35': 'Desagendamento do débito automático',
+  '40': 'Estorno de pagamento',
+  '55': 'Sustado judicial'
 };
 
 const REMESSA_INSTRUCTION_CODES = {
-  '01': 'Entrada de título',
+  '01': 'Remessa (entrada de título)',
   '02': 'Pedido de baixa',
+  '03': 'Pedido de protesto falimentar',
   '04': 'Concessão de abatimento',
-  '05': 'Cancelamento de abatimento',
+  '05': 'Cancelamento de abatimento concedido',
   '06': 'Alteração de vencimento',
-  '07': 'Alteração de uso da empresa',
+  '07': 'Alteração do controle do participante',
   '08': 'Alteração de seu número',
-  '09': 'Protestar',
-  '18': 'Sustar protesto',
+  '09': 'Pedido de protesto',
+  '18': 'Sustar protesto e baixar título',
+  '19': 'Sustar protesto e manter em carteira',
   '31': 'Alteração de outros dados'
 };
 
-// ---------- CNAB 400 remessa (layout genérico Febraban de envio de cobrança) ----------
+// ---------- CNAB 400 (layout oficial Bradesco/Febraban — arquivo de REMESSA) ----------
+const CNAB400_REMESSA_HEADER = [
+  [1, 1, 'Tipo de registro', 'raw'],
+  [2, 2, 'Código do registro (remessa)', 'raw'],
+  [3, 9, 'Literal "REMESSA"', 'raw'],
+  [10, 11, 'Código de serviço', 'raw'],
+  [12, 26, 'Literal do serviço', 'raw'],
+  [27, 46, 'Código da empresa', 'raw'],
+  [47, 76, 'Nome da empresa (cedente)', 'raw'],
+  [77, 79, 'Código do banco', 'bank'],
+  [80, 94, 'Nome do banco', 'raw'],
+  [95, 100, 'Data de gravação', 'date'],
+  [111, 117, 'Nº sequencial de remessa', 'raw'],
+  [395, 400, 'Nº sequencial do registro', 'raw']
+];
+
 const CNAB400_REMESSA_DETALHE = [
   [1, 1, 'Tipo de registro', 'raw'],
-  [2, 3, 'Tipo de inscrição do cedente', 'raw'],
-  [4, 17, 'CNPJ/CPF do cedente', 'raw'],
-  [19, 20, 'Agência do cedente', 'raw'],
-  [21, 25, 'Conta corrente do cedente', 'raw'],
-  [27, 37, 'Nosso número', 'raw'],
-  [38, 38, 'Dígito do nosso número', 'raw'],
-  [63, 64, 'Código de instrução/ocorrência', 'remInstruction'],
-  [74, 84, 'Nº do documento (seu número)', 'raw'],
-  [111, 120, 'Data de vencimento', 'date'],
-  [121, 133, 'Valor do título', 'money'],
-  [147, 150, 'Código do banco cobrador', 'bank'],
-  [176, 188, 'Valor de desconto concedido', 'money'],
-  [189, 201, 'Valor de IOF', 'money'],
-  [202, 214, 'Valor de abatimento', 'money'],
-  [220, 220, 'Tipo de inscrição do sacado', 'raw'],
-  [221, 234, 'CNPJ/CPF do sacado', 'raw'],
-  [235, 274, 'Nome do sacado', 'raw'],
-  [275, 314, 'Endereço do sacado', 'raw'],
-  [315, 326, 'Bairro do sacado', 'raw'],
-  [327, 334, 'CEP do sacado', 'raw'],
-  [335, 349, 'Cidade do sacado', 'raw'],
-  [350, 351, 'UF do sacado', 'raw'],
-  [391, 394, 'Nº sequencial do registro', 'raw']
+  [21, 21, 'Zero (fixo)', 'raw'],
+  [22, 24, 'Código da carteira', 'raw'],
+  [25, 29, 'Agência do cedente (sem dígito)', 'raw'],
+  [30, 36, 'Conta corrente do cedente', 'raw'],
+  [37, 37, 'Dígito da conta', 'raw'],
+  [38, 62, 'Nº de controle do participante (uso da empresa)', 'raw'],
+  [71, 81, 'Nosso número', 'raw'],
+  [82, 82, 'Dígito de autoconferência do nosso número', 'raw'],
+  [109, 110, 'Código de instrução/ocorrência', 'remInstruction'],
+  [111, 120, 'Nº do documento (seu número)', 'raw'],
+  [121, 126, 'Data de vencimento', 'date'],
+  [127, 139, 'Valor do título', 'money'],
+  [148, 149, 'Espécie do título', 'raw'],
+  [151, 156, 'Data de emissão do título', 'date'],
+  [157, 158, '1ª instrução', 'raw'],
+  [159, 160, '2ª instrução', 'raw'],
+  [161, 173, 'Valor a ser cobrado por dia de atraso (mora)', 'money'],
+  [174, 179, 'Data limite para concessão de desconto', 'date'],
+  [180, 192, 'Valor do desconto', 'money'],
+  [193, 205, 'Valor do IOF', 'money'],
+  [206, 218, 'Valor do abatimento a conceder', 'money'],
+  [219, 220, 'Tipo de inscrição do pagador', 'raw'],
+  [221, 234, 'CNPJ/CPF do pagador', 'raw'],
+  [235, 274, 'Nome do pagador', 'raw'],
+  [275, 314, 'Endereço completo do pagador', 'raw'],
+  [327, 331, 'CEP do pagador', 'raw'],
+  [332, 334, 'Sufixo do CEP', 'raw'],
+  [395, 400, 'Nº sequencial do registro', 'raw']
 ];
 
 // ---------- CNAB 240 remessa — segmentos P, Q, R ----------
@@ -314,7 +368,7 @@ function parseCNAB400(lines, forcedKind) {
     const tipo = line[0];
     let layout, tipoLabel;
     if (tipo === '0') {
-      layout = CNAB400_HEADER;
+      layout = kind === 'remessa' ? CNAB400_REMESSA_HEADER : CNAB400_HEADER;
       tipoLabel = kind === 'remessa' ? 'Header do arquivo (remessa)' : 'Header do arquivo (retorno)';
     } else if (tipo === '9' && idx === lines.length - 1) {
       layout = CNAB400_TRAILER; tipoLabel = 'Trailer do arquivo';
