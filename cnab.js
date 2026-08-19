@@ -203,126 +203,25 @@ const CNAB400_REMESSA_DETALHE = [
   [395, 400, 'Nº sequencial do registro', 'raw']
 ];
 
-// ---------- CNAB 240 remessa — segmentos P, Q, R ----------
-const CNAB240_SEGMENTO_P = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [18, 22, 'Agência cedente', 'raw'],
-  [23, 29, 'Conta cedente', 'raw'],
-  [38, 62, 'Nosso número', 'raw'],
-  [63, 63, 'Código da carteira', 'raw'],
-  [74, 88, 'Nº do documento (seu número)', 'raw'],
-  [89, 96, 'Data de vencimento', 'date'],
-  [97, 111, 'Valor do título', 'money'],
-  [151, 158, 'Data de emissão do título', 'date'],
-  [159, 160, '1ª instrução', 'remInstruction'],
-  [174, 188, 'Valor de mora/dia', 'money'],
-  [189, 196, 'Data limite de desconto', 'date'],
-  [197, 211, 'Valor de desconto', 'money'],
-  [212, 226, 'Valor de IOF', 'money'],
-  [227, 241, 'Valor de abatimento', 'money']
-];
-
-const CNAB240_SEGMENTO_Q = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [18, 18, 'Tipo de inscrição do sacado', 'raw'],
-  [19, 33, 'CNPJ/CPF do sacado', 'raw'],
-  [34, 73, 'Nome do sacado', 'raw'],
-  [74, 113, 'Endereço do sacado', 'raw'],
-  [114, 128, 'Bairro do sacado', 'raw'],
-  [129, 133, 'CEP do sacado', 'raw'],
-  [136, 150, 'Cidade do sacado', 'raw'],
-  [151, 152, 'UF do sacado', 'raw']
-];
-
-const CNAB240_SEGMENTO_R = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [18, 18, 'Código do desconto 2', 'raw'],
-  [19, 26, 'Data do desconto 2', 'date'],
-  [27, 41, 'Valor do desconto 2', 'money'],
-  [42, 42, 'Código da multa', 'raw'],
-  [43, 50, 'Data da multa', 'date'],
-  [51, 65, 'Valor da multa', 'money'],
-  [76, 90, 'Valor do abatimento não aproveitado', 'money'],
-  [91, 220, 'Mensagem livre', 'raw']
-];
-
-// ---------- CNAB 240 (layout genérico Febraban) ----------
+// ---------- CNAB 240 (layout oficial Febraban v10.11 — Cobrança) ----------
 const CNAB240_HEADER_ARQUIVO = [
   [1, 3, 'Código do banco', 'bank'],
   [4, 7, 'Lote de serviço', 'raw'],
   [8, 8, 'Tipo de registro', 'raw'],
-  [18, 32, 'CNPJ/CPF da empresa', 'raw'],
+  [18, 18, 'Tipo de inscrição da empresa', 'raw'],
+  [19, 32, 'Número de inscrição da empresa', 'raw'],
+  [33, 52, 'Código do convênio no banco', 'raw'],
+  [53, 57, 'Agência mantenedora da conta', 'raw'],
+  [58, 58, 'Dígito verificador da agência', 'raw'],
+  [59, 70, 'Número da conta corrente', 'raw'],
+  [71, 71, 'Dígito verificador da conta', 'raw'],
   [73, 102, 'Nome da empresa', 'raw'],
   [103, 132, 'Nome do banco', 'raw'],
-  [143, 143, 'Código remessa/retorno (1=remessa,2=retorno)', 'raw'],
+  [143, 143, 'Código remessa/retorno (1=remessa, 2=retorno)', 'raw'],
   [144, 151, 'Data de geração do arquivo', 'date'],
   [152, 157, 'Hora de geração do arquivo', 'raw'],
   [158, 163, 'Nº sequencial do arquivo', 'raw'],
-  [164, 166, 'Nº da versão do layout', 'raw']
-];
-
-const CNAB240_HEADER_LOTE = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 9, 'Tipo de operação', 'raw'],
-  [10, 11, 'Tipo de serviço', 'raw'],
-  [18, 32, 'CNPJ/CPF da empresa', 'raw'],
-  [73, 102, 'Nome da empresa (cedente)', 'raw'],
-  [143, 182, 'Endereço/logradouro', 'raw']
-];
-
-const CNAB240_SEGMENTO_T = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [18, 22, 'Agência cobradora', 'raw'],
-  [23, 29, 'Conta cobradora', 'raw'],
-  [38, 62, 'Nosso número', 'raw'],
-  [63, 63, 'Carteira', 'raw'],
-  [74, 88, 'Nº do documento (seu número)', 'raw'],
-  [89, 96, 'Data de vencimento', 'date'],
-  [97, 111, 'Valor do título', 'money'],
-  [123, 126, 'Código da carteira/banco cobrador', 'raw'],
-  [147, 154, 'Data de ocorrência', 'date'],
-  [215, 217, 'Código de ocorrência/motivo', 'raw']
-];
-
-const CNAB240_SEGMENTO_U = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
-  [14, 14, 'Segmento', 'raw'],
-  [17, 29, 'Valor do IOF', 'money'],
-  [30, 42, 'Valor do abatimento', 'money'],
-  [43, 55, 'Valor do desconto', 'money'],
-  [56, 68, 'Valor do principal pago (título liquidado)', 'money'],
-  [69, 81, 'Valor de juros/mora', 'money'],
-  [82, 94, 'Valor de outros créditos', 'money'],
-  [95, 102, 'Data de ocorrência/crédito', 'date'],
-  [103, 110, 'Data de crédito', 'date']
-];
-
-const CNAB240_TRAILER_LOTE = [
-  [1, 3, 'Código do banco', 'bank'],
-  [4, 7, 'Lote de serviço', 'raw'],
-  [8, 8, 'Tipo de registro', 'raw'],
-  [18, 23, 'Quantidade de registros do lote', 'raw']
+  [164, 166, 'Nº da versão do layout do arquivo', 'raw']
 ];
 
 const CNAB240_TRAILER_ARQUIVO = [
@@ -331,6 +230,157 @@ const CNAB240_TRAILER_ARQUIVO = [
   [8, 8, 'Tipo de registro', 'raw'],
   [18, 23, 'Quantidade de lotes do arquivo', 'raw'],
   [24, 29, 'Quantidade de registros do arquivo', 'raw']
+];
+
+// Header de lote específico do serviço "Títulos em Cobrança" (posições diferem do lote de Pagamentos)
+const CNAB240_HEADER_LOTE = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 9, 'Tipo de operação', 'raw'],
+  [10, 11, 'Tipo de serviço', 'raw'],
+  [14, 16, 'Nº da versão do layout do lote', 'raw'],
+  [18, 18, 'Tipo de inscrição da empresa', 'raw'],
+  [19, 33, 'Número de inscrição da empresa', 'raw'],
+  [34, 53, 'Código do convênio no banco', 'raw'],
+  [54, 58, 'Agência mantenedora da conta', 'raw'],
+  [60, 71, 'Número da conta corrente', 'raw'],
+  [74, 103, 'Nome da empresa (cedente)', 'raw'],
+  [184, 191, 'Nº de remessa/retorno', 'raw'],
+  [192, 199, 'Data de gravação', 'date'],
+  [200, 207, 'Data do crédito', 'date']
+];
+
+const CNAB240_TRAILER_LOTE = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [18, 23, 'Quantidade de registros do lote', 'raw'],
+  [24, 29, 'Qtde. títulos cobrança simples', 'raw'],
+  [30, 46, 'Valor total dos títulos (cobrança simples)', 'money'],
+  [47, 52, 'Qtde. títulos cobrança vinculada', 'raw'],
+  [53, 69, 'Valor total dos títulos (cobrança vinculada)', 'money'],
+  [70, 75, 'Qtde. títulos cobrança caucionada', 'raw'],
+  [76, 92, 'Valor total dos títulos (cobrança caucionada)', 'money'],
+  [93, 98, 'Qtde. títulos cobrança descontada', 'raw'],
+  [99, 115, 'Valor total dos títulos (cobrança descontada)', 'money'],
+  [116, 123, 'Nº do aviso de lançamento', 'raw']
+];
+
+// ---------- CNAB 240 remessa — segmentos P, Q, R (Títulos em Cobrança) ----------
+const CNAB240_SEGMENTO_P = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [16, 17, 'Código de movimento (remessa)', 'remInstruction'],
+  [18, 22, 'Agência mantenedora da conta', 'raw'],
+  [24, 35, 'Número da conta corrente', 'raw'],
+  [38, 57, 'Nosso número', 'raw'],
+  [58, 58, 'Código da carteira', 'raw'],
+  [59, 59, 'Forma de cadastramento do título', 'raw'],
+  [60, 60, 'Tipo de documento', 'raw'],
+  [63, 77, 'Nº do documento (seu número)', 'raw'],
+  [78, 85, 'Data de vencimento', 'date'],
+  [86, 100, 'Valor do título', 'money'],
+  [101, 105, 'Agência cobradora', 'raw'],
+  [107, 108, 'Espécie do título', 'raw'],
+  [109, 109, 'Aceite', 'raw'],
+  [110, 117, 'Data de emissão do título', 'date'],
+  [119, 126, 'Data do juros de mora', 'date'],
+  [127, 141, 'Valor de mora por dia', 'money'],
+  [143, 150, 'Data limite para desconto', 'date'],
+  [151, 165, 'Valor do desconto', 'money'],
+  [166, 180, 'Valor do IOF', 'money'],
+  [181, 195, 'Valor do abatimento', 'money'],
+  [196, 220, 'Uso da empresa (identificação interna)', 'raw'],
+  [221, 221, 'Código para protesto', 'raw'],
+  [222, 223, 'Prazo para protesto (dias)', 'raw'],
+  [224, 224, 'Código para baixa/devolução', 'raw'],
+  [225, 227, 'Prazo para baixa/devolução (dias)', 'raw']
+];
+
+const CNAB240_SEGMENTO_Q = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [16, 17, 'Código de movimento (remessa)', 'remInstruction'],
+  [18, 18, 'Tipo de inscrição do pagador', 'raw'],
+  [19, 33, 'CNPJ/CPF do pagador', 'raw'],
+  [34, 73, 'Nome do pagador', 'raw'],
+  [74, 113, 'Endereço do pagador', 'raw'],
+  [114, 128, 'Bairro do pagador', 'raw'],
+  [129, 133, 'CEP do pagador', 'raw'],
+  [134, 136, 'Sufixo do CEP', 'raw'],
+  [137, 151, 'Cidade do pagador', 'raw'],
+  [152, 153, 'UF do pagador', 'raw'],
+  [155, 169, 'CNPJ/CPF do sacador/avalista', 'raw'],
+  [170, 209, 'Nome do sacador/avalista', 'raw']
+];
+
+const CNAB240_SEGMENTO_R = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [16, 17, 'Código de movimento (remessa)', 'remInstruction'],
+  [19, 26, 'Data do desconto 2', 'date'],
+  [27, 41, 'Valor do desconto 2', 'money'],
+  [43, 50, 'Data do desconto 3', 'date'],
+  [51, 65, 'Valor do desconto 3', 'money'],
+  [67, 74, 'Data da multa', 'date'],
+  [75, 89, 'Valor da multa', 'money'],
+  [100, 139, 'Mensagem 3', 'raw'],
+  [140, 179, 'Mensagem 4', 'raw']
+];
+
+// ---------- CNAB 240 retorno — segmentos T, U (Títulos em Cobrança) ----------
+const CNAB240_SEGMENTO_T = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [16, 17, 'Código de movimento (retorno)', 'occurrence'],
+  [18, 22, 'Agência mantenedora da conta', 'raw'],
+  [24, 35, 'Número da conta corrente', 'raw'],
+  [38, 57, 'Nosso número', 'raw'],
+  [58, 58, 'Código da carteira', 'raw'],
+  [59, 73, 'Nº do documento (seu número)', 'raw'],
+  [74, 81, 'Data de vencimento', 'date'],
+  [82, 96, 'Valor do título', 'money'],
+  [97, 99, 'Banco cobrador/recebedor', 'bank'],
+  [100, 104, 'Agência cobradora/recebedora', 'raw'],
+  [106, 130, 'Uso da empresa (identificação interna)', 'raw'],
+  [133, 133, 'Tipo de inscrição do pagador', 'raw'],
+  [134, 148, 'CNPJ/CPF do pagador', 'raw'],
+  [149, 188, 'Nome do pagador', 'raw'],
+  [199, 213, 'Valor da tarifa/custas', 'money'],
+  [214, 223, 'Motivo da ocorrência', 'raw']
+];
+
+const CNAB240_SEGMENTO_U = [
+  [1, 3, 'Código do banco', 'bank'],
+  [4, 7, 'Lote de serviço', 'raw'],
+  [8, 8, 'Tipo de registro', 'raw'],
+  [9, 13, 'Nº sequencial do registro no lote', 'raw'],
+  [14, 14, 'Segmento', 'raw'],
+  [16, 17, 'Código de movimento (retorno)', 'occurrence'],
+  [18, 32, 'Valor de acréscimos (juros/multa/encargos)', 'money'],
+  [33, 47, 'Valor do desconto concedido', 'money'],
+  [48, 62, 'Valor do abatimento concedido/cancelado', 'money'],
+  [63, 77, 'Valor do IOF recolhido', 'money'],
+  [78, 92, 'Valor pago pelo pagador', 'money'],
+  [93, 107, 'Valor líquido a ser creditado', 'money'],
+  [108, 122, 'Valor de outras despesas', 'money'],
+  [123, 137, 'Valor de outros créditos', 'money'],
+  [138, 145, 'Data da ocorrência', 'date'],
+  [146, 153, 'Data do crédito', 'date'],
+  [181, 210, 'Complemento da ocorrência', 'raw']
 ];
 
 function classify(value, kind) {
